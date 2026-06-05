@@ -289,14 +289,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   }
 
   /**
-   * Reset a task to its initial state.
-   * TODO: Implement actual reset logic (GUIDEDTOUR-3).
-   */
-  async resetTask(task: TourTask): Promise<void> {
-    console.log(task);
-  }
-
-  /**
    * TODO: Discuss why is this needed
    */
   setupStep(step: TourStep): void {
