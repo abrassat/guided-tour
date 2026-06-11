@@ -135,7 +135,7 @@ public class ToursManager
             EntityReference documentReference =
                 this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
             String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
-            boolean isActive = (Boolean) document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
+            boolean isActive = !document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX)).equals(0);
             TourDTO dto = new TourDTO(documentReference.toString(), title, isActive);
             dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
             tours.add(dto);

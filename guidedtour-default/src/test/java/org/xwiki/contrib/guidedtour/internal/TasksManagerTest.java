@@ -178,12 +178,12 @@ class TasksManagerTest
         when(solrDocument1.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn("");
         when(solrDocument1.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(taskDTO1.getTitle());
         when(solrDocument1.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(1L);
-        when(solrDocument1.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(true);
+        when(solrDocument1.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(1);
 
         when(solrDocument2.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn(VALIDATED_TASK_ID1);
         when(solrDocument2.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(taskDTO2.getTitle());
         when(solrDocument2.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(2L);
-        when(solrDocument2.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(false);
+        when(solrDocument2.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(0);
     }
 
     @Test

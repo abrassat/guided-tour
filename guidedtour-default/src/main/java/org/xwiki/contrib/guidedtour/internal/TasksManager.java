@@ -260,7 +260,7 @@ public class TasksManager
         String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
         String dependsOn = (String) document.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX));
         long order = (Long) document.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX));
-        boolean isActive = (Boolean) document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
+        boolean isActive = !document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX)).equals(0);
 
         return new TaskDTO(documentReference.getName(), title, (int) order, isActive,
             Splitter.on(',').omitEmptyStrings().splitToList(dependsOn));

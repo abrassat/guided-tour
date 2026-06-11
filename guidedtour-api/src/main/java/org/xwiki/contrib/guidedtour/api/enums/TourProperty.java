@@ -38,7 +38,7 @@ public enum TourProperty
     /**
      * The description key as a base key and boolean suffix representing the field type.
      */
-    IS_ACTIVE("isActive", Boolean.class.getSimpleName().toLowerCase()),
+    IS_ACTIVE("isActive", "int"),
     /**
      * The dependsOn key as a base key and string suffix representing the field type. It represents the dependencies of
      * a task on other tasks.
