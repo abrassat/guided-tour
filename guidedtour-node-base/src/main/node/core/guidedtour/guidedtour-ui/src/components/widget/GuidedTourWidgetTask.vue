@@ -30,7 +30,7 @@
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
       ['task-' + task!.status]: true,
-      'task-dependent': checkDependentTasksCompleted(),
+      'task-dependent': !checkDependentTasksCompleted(),
       'guidedtour-task': true,
     }"
     :id="task.id"
