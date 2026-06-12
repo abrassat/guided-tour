@@ -30,16 +30,22 @@
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
       ['task-' + task!.status]: true,
+      'task-dependent': checkDependentTasksCompleted(),
       'guidedtour-task': true,
     }"
     :id="task.id"
+    :hint="getDependencyHint()"
     @click="onStartTask"
   >
     <template v-slot:pre-btns>
       <!-- This is just for show, it shouldn't do anything. -->
-      <button>
-        <i class="fa fa-arrow-right" />
-      </button>
+      <!-- TODO: This is entirely overkill and unneccessary, but I want these to shake if clicked on a depending task. -->
+      <i
+        v-if="!checkDependentTasksCompleted()"
+        ref="prebtns"
+        class="always-show fa-solid fa-table-cells-row-lock"
+      />
+      <i v-else class="fa fa-arrow-right" />
     </template>
     <template v-slot:item-title>
       {{ task.title }}
@@ -61,8 +67,9 @@
 
 <script setup lang="ts">
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
+import { XWiki } from "../../services/xwiki.js";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { inject, reactive, ref, toRefs } from "vue";
+import { inject, reactive, ref, toRefs, useTemplateRef } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
@@ -73,6 +80,49 @@ const { task, tourId } = defineProps<{
   tourId: string;
 }>();
 
+const dependentTasks: (TourTask | undefined)[] = task.dependsOn
+  ? await Promise.all(
+      task.dependsOn!.map(async (taskId: string) => {
+        return await guidedTourManager.getTask(task.tourId!, taskId);
+      }),
+    )
+  : [];
+
+function checkDependentTasksCompleted() {
+  return dependentTasks
+    .map((dep: TourTask | undefined) => dep?.status === TourTaskStatus.DONE)
+    .every(Boolean);
+}
+
+/**
+ * Get the tooltip/subtitle of this task, to tell the user which tasks were not completed.
+ */
+function getDependencyHint() {
+  let uncompletedDeps: TourTask[] = [];
+  for (let dep of dependentTasks) {
+    if (dep && dep.status !== TourTaskStatus.TODO) {
+      uncompletedDeps.push(dep);
+    }
+  }
+  if (uncompletedDeps.length == 0) {
+    return "";
+  } else {
+    return (
+      "Depends on: " +
+      uncompletedDeps.map((task: TourTask) => task.title).join(", ")
+    );
+  }
+}
+
+function playShakeAnimation(element: HTMLElement | null) {
+  if (element) {
+    element.classList.remove("shake-anim");
+    void element.offsetWidth; // force reflow
+    element.classList.add("shake-anim");
+  }
+}
+
+const prebtns = useTemplateRef("prebtns");
 const state = reactive({
   isWaitingAsync: false,
 });
@@ -89,6 +139,13 @@ async function onResetTask() {
 }
 
 async function onSkipTask() {
+  // if (!checkDependentTasksCompleted()) {
+  //   // Short circuit if trying to skip a task with uncompleted dependencies.
+  //   // The UI code above will handle displaying the warning.
+  //   playShakeAnimation(prebtns.value);
+  //   new XWiki.widgets.Notification(getDependencyHint(), "error");
+  //   return;
+  // }
   isWaitingAsync.value = true;
   await guidedTourManager.setTaskStatus(task!, TourTaskStatus.SKIPPED);
   emit("taskStatusChanged", task);
@@ -96,12 +153,22 @@ async function onSkipTask() {
 }
 
 async function onStartTask() {
+  if (!checkDependentTasksCompleted()) {
+    // Short circuit if trying to start a task with uncompleted dependencies.
+    // The UI code above will handle displaying the warning.
+    playShakeAnimation(prebtns.value);
+    new XWiki.widgets.Notification(getDependencyHint(), "error");
+    return;
+  }
   // Fetch the steps manually, so we can show the loader nicely while waiting for the steps to be fetched.
   isWaitingAsync.value = true;
   await guidedTourManager.getSteps(tourId, task!.id).finally(() => {
     isWaitingAsync.value = false;
   });
-  guidedTourManager.startTask(task!, false);
+  guidedTourManager.startTask(task!, false).catch((e) => {
+    console.error(e);
+    new XWiki.widgets.Notification(e, "error");
+  });
 }
 </script>
 
@@ -135,13 +202,38 @@ async function onStartTask() {
   background: var(--guidedtour-background-color-secondary) 100%;
 }
 
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(-0.5em);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-1em);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(1em);
+  }
+}
+.shake-anim {
+  animation: shake 0.65s;
+}
+
 .guidedtour-task.task-DONE {
   text-decoration: line-through;
   color: var(
     --guidedtour-text-color
   ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
-
+/* TODO: Find a better style */
+.guidedtour-task.task-dependent {
+  color: var(--guidedtour-text-color);
+  background: var(--guidedtour-background-color-secondary) 100%;
+}
 .guidedtour-task.task-SKIPPED {
   color: var(--guidedtour-text-color);
 }
