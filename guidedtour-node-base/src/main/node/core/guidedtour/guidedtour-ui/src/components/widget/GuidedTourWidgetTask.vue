@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
+// @ts-expect-error this is a JavaScript file, it is expected to not have types.
 import { XWiki } from "../../services/xwiki.js";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { inject, reactive, ref, toRefs, useTemplateRef } from "vue";
