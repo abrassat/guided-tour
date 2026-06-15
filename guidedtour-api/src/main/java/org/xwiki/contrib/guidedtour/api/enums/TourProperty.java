@@ -145,11 +145,11 @@ public enum TourProperty
 
     /**
      * When installing Tour pages through the EM, the boolean fields are indexed as int, so two properties are needed
-     * for the bool fields. This method will check both fields, and return the value as a boolean.
-     *
-     * @param document The document of the task, as returned by a solr query
-     * @param classPrefix The prefix to prepend to the property name, to get the right property
-     * @return boolean value of the isActive property
+     * for the bool fields. This method will check both fields, and return the value as a boolean. If the value is
+     * missing, it will return {@code false}.
+     * @param document the document in which to check for the "isActive" field, as returned by a solr query
+     * @param classPrefix the prefix to prepend to the property name, to get the right property
+     * @return boolean value of the isActive property, or {@code false} by default.
      */
     public static boolean getIsActiveProperty(SolrDocument document, String classPrefix)
     {
