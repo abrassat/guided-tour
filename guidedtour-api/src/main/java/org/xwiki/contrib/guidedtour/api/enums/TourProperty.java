@@ -19,6 +19,7 @@
  */
 package org.xwiki.contrib.guidedtour.api.enums;
 
+import org.apache.solr.common.SolrDocument;
 import org.xwiki.stability.Unstable;
 
 /**
@@ -36,9 +37,15 @@ public enum TourProperty
      */
     TITLE("title", String.class.getSimpleName().toLowerCase()),
     /**
-     * The description key as a base key and boolean suffix representing the field type.
+     * The isActive key as a base key and boolean suffix representing the field type. When installing Tour pages through
+     * the EM, the boolean fields are indexed as int, so two properties are needed for the bool fields.
      */
-    IS_ACTIVE("isActive", "int"),
+    IS_ACTIVE_INT(TourProperty.IS_ACTIVE_PROP_NAME, "int"),
+    /**
+     * The isActive key as a base key and boolean suffix representing the field type. When installing Tour pages through
+     * the EM, the boolean fields are indexed as int, so two properties are needed for the bool fields.
+     */
+    IS_ACTIVE_BOOL(TourProperty.IS_ACTIVE_PROP_NAME, "boolean"),
     /**
      * The dependsOn key as a base key and string suffix representing the field type. It represents the dependencies of
      * a task on other tasks.
@@ -86,9 +93,11 @@ public enum TourProperty
      */
     QUERY_PARAMETERS("queryParameters", null);
 
-    private String baseKey;
+    private static final String IS_ACTIVE_PROP_NAME = "isActive";
 
-    private String suffix;
+    private final String baseKey;
+
+    private final String suffix;
 
     /**
      * Constructor for TourProperty.
@@ -132,5 +141,26 @@ public enum TourProperty
     public String formKey(String stringFormat)
     {
         return String.format(stringFormat, getObjectKey());
+    }
+
+    /**
+     * When installing Tour pages through the EM, the boolean fields are indexed as int, so two properties are needed
+     * for the bool fields. This method will check both fields, and return the value as a boolean.
+     *
+     * @param document The document of the task, as returned by a solr query
+     * @param classPrefix The prefix to prepend to the property name, to get the right property
+     * @return boolean value of the isActive property
+     */
+    public static boolean getIsActiveProperty(SolrDocument document, String classPrefix)
+    {
+        Object boolField = document.getFirstValue(TourProperty.IS_ACTIVE_BOOL.formKey(classPrefix));
+        if (boolField != null) {
+            return (Boolean) boolField;
+        }
+        Object intField = document.getFirstValue(TourProperty.IS_ACTIVE_INT.formKey(classPrefix));
+        if (intField != null) {
+            return !intField.equals(0);
+        }
+        return false;
     }
 }

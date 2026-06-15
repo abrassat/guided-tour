@@ -70,7 +70,8 @@ public class TasksManager
 
     private static final List<String> FILTERED_LINES =
         List.of(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX), TourProperty.TITLE.formKey(CLASS_PREFIX),
-            TourProperty.ORDER.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
+            TourProperty.ORDER.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX),
+            TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX));
 
     private static final String TASK_NOT_FOUND_ERROR = "Task with the given id [%s] does not exists.";
 
@@ -260,7 +261,7 @@ public class TasksManager
         String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
         String dependsOn = (String) document.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX));
         long order = (Long) document.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX));
-        boolean isActive = !document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX)).equals(0);
+        boolean isActive = TourProperty.getIsActiveProperty(document, CLASS_PREFIX);
 
         return new TaskDTO(documentReference.getName(), title, (int) order, isActive,
             Splitter.on(',').omitEmptyStrings().splitToList(dependsOn));
