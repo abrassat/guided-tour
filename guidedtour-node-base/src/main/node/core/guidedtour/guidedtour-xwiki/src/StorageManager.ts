@@ -60,15 +60,25 @@ export class StorageManager {
     return this.getStorageKeyPrefix(task) + "_steps";
   }
 
+  static getStorageLocationForKey(key: string) {
+    return key.endsWith("_currentStep") ||
+      key.endsWith("_steps") ||
+      key == "guidedtour_activeTask"
+      ? globalThis.sessionStorage
+      : globalThis.localStorage;
+  }
+
   static getStorageKey(key: string) {
-    return globalThis.localStorage.getItem(key);
+    const storageLocation = this.getStorageLocationForKey(key);
+    return storageLocation.getItem(key);
   }
 
   static setStorageKey(key: string, stepIndex?: string) {
+    const storageLocation = this.getStorageLocationForKey(key);
     if (stepIndex === undefined) {
-      globalThis.localStorage.removeItem(key);
+      storageLocation.removeItem(key);
     } else {
-      globalThis.localStorage.setItem(key, stepIndex);
+      storageLocation.setItem(key, stepIndex);
     }
   }
 }
