@@ -60,10 +60,22 @@ export class StorageManager {
     return this.getStorageKeyPrefix(task) + "_steps";
   }
 
-  static getStorageLocationForKey(key: string) {
+  /**
+   * Get the Storage in which a key should be kept (sessionStorage or localStorage).
+   * Keys pertaining to tasks that are in progress should be kept in sessionStorage, to ensure a task can only be
+   * completed in the browser tab it was started.
+   * Only the following keys use sessionStorage:
+   * - TASK_ID_currentStep - Holds the current step of the active task
+   * - TASK_ID_steps - Caches the steps of the active task, to avoid refetching if the task takes users to another page
+   * - guidedtour_activeTask - The TASK_ID of the active task
+   *
+   * @param key - the storage key name to locate
+   * @returns a Storage location where the key should be kept
+   */
+  static getStorageLocationForKey(key: string): Storage {
     return key.endsWith("_currentStep") ||
       key.endsWith("_steps") ||
-      key == "guidedtour_activeTask"
+      key == StorageManager.getActiveTaskStorageKey()
       ? globalThis.sessionStorage
       : globalThis.localStorage;
   }
