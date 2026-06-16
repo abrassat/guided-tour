@@ -58,6 +58,8 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOU
  * Manages the instance tours. It provides methods to create, retrieve, update and delete tours. Tours are stored as
  * XWiki documents with a TourClass object.
  *
+ * This class uses Solr to search for the documents, in order to avoid potential slowness in HQL queries.
+ *
  * @version $Id$
  * @since 1.0
  */

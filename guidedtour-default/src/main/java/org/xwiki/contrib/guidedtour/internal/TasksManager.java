@@ -57,6 +57,8 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TAS
  * stored as XWiki documents with a TaskClass object. The document name is the task id and the parent document is the
  * tour document.
  *
+ * This class uses Solr to search for the documents, in order to avoid potential slowness in HQL queries.
+ *
  * @version $Id$
  * @since 1.0
  */
