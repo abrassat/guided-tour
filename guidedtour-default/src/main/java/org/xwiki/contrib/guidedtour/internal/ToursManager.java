@@ -57,7 +57,7 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOU
 /**
  * Manages the instance tours. It provides methods to create, retrieve, update and delete tours. Tours are stored as
  * XWiki documents with a TourClass object.
- *
+ * <p>
  * This class uses Solr to search for the documents, in order to avoid potential slowness in HQL queries.
  *
  * @version $Id$
@@ -138,7 +138,7 @@ public class ToursManager
             EntityReference documentReference =
                 this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
             String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
-            boolean isActive = TourProperty.getIsActiveProperty(document, CLASS_PREFIX);
+            boolean isActive = SolrQueryUtil.getIsActiveProperty(document, CLASS_PREFIX);
             TourDTO dto = new TourDTO(documentReference.toString(), title, isActive);
             dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
             tours.add(dto);

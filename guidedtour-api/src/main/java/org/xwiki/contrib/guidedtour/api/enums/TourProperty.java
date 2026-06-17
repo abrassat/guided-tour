@@ -19,7 +19,6 @@
  */
 package org.xwiki.contrib.guidedtour.api.enums;
 
-import org.apache.solr.common.SolrDocument;
 import org.xwiki.stability.Unstable;
 
 /**
@@ -141,26 +140,5 @@ public enum TourProperty
     public String formKey(String stringFormat)
     {
         return String.format(stringFormat, getObjectKey());
-    }
-
-    /**
-     * When installing Tour pages through the EM, the boolean fields are indexed as int, so two properties are needed
-     * for the bool fields. This method will check both fields, and return the value as a boolean. If the value is
-     * missing, it will return {@code false}.
-     * @param document the document in which to check for the "isActive" field, as returned by a solr query
-     * @param classPrefix the prefix to prepend to the property name, to get the right property
-     * @return boolean value of the isActive property, or {@code false} by default.
-     */
-    public static boolean getIsActiveProperty(SolrDocument document, String classPrefix)
-    {
-        Object boolField = document.getFirstValue(TourProperty.IS_ACTIVE_BOOL.formKey(classPrefix));
-        if (boolField != null) {
-            return (Boolean) boolField;
-        }
-        Object intField = document.getFirstValue(TourProperty.IS_ACTIVE_INT.formKey(classPrefix));
-        if (intField != null) {
-            return !intField.equals(0);
-        }
-        return false;
     }
 }
