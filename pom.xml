@@ -27,7 +27,7 @@
   </parent>
   <artifactId>guidedtour</artifactId>
   <groupId>org.xwiki.contrib.guidedtour</groupId>
-  <version>0.1</version>
+  <version>0.2-SNAPSHOT</version>
   <name>Guided Tour Application - Parent POM</name>
   <packaging>pom</packaging>
   <description>Interactive and configurable onboarding tours.</description>
@@ -77,6 +77,6 @@
     <connection>scm:git:git://github.com/xwiki-contrib/guided-tour.git</connection>
     <developerConnection>scm:git:git@github.com:xwiki-contrib/guided-tour.git</developerConnection>
     <url>https://github.com/xwiki-contrib/guided-tour/tree/master</url>
-    <tag>guidedtour-0.1</tag>
+    <tag>HEAD</tag>
   </scm>
 </project>

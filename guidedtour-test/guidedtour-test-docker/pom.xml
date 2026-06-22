@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.xwiki.contrib.guidedtour</groupId>
     <artifactId>guidedtour-test</artifactId>
-    <version>0.1</version>
+    <version>0.2-SNAPSHOT</version>
   </parent>
   <artifactId>guidedtour-test-docker</artifactId>
   <name>Guided Tour Application - Tests - Functional Tests</name>

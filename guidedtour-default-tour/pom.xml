@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.xwiki.contrib.guidedtour</groupId>
     <artifactId>guidedtour</artifactId>
-    <version>0.1</version>
+    <version>0.2-SNAPSHOT</version>
   </parent>
   <artifactId>guidedtour-default-tour</artifactId>
   <name>Guided Tour Application - Default Tour</name>
