@@ -144,7 +144,7 @@ onMounted(async () => {
 .guidedtour-tour.tour-DONE .guidedtour-tour-header .tour-title {
   text-decoration: line-through;
   color: var(
-    --guidedtour-background-color
+    --guidedtour-text-color
   ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
 

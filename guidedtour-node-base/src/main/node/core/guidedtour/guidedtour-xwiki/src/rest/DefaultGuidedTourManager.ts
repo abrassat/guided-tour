@@ -297,17 +297,33 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     this.defaultTourManagerApi.computeToursStatus(
       Array.of((await this.defaultTourManagerApi.getTour(task.tourId!))!),
     );
-    // Since we're setting the task status, it means we're done with all steps.
-    // So we can delete both the current step index and the cached steps objects.
-    StorageManager.setStorageKey(
-      StorageManager.getTaskCurrentStepStorageKey(task),
-      undefined,
-    );
-    StorageManager.setStorageKey(
-      StorageManager.getTaskStepStorageStorageKey(task),
-      undefined,
-    );
+    if (task === this.activeTask) {
+      // Since we're setting the task status, it means we're done with all steps. So destroy the active task.
+      this.destroyActiveTask();
+    }
+    // Sync with storage.
     await this.saveUserTaskStatuses(this);
+  }
+
+  /**
+   * Delete all data pertaining to the current task in progress.
+   * Deletes the active task object, and the Session Storage keys for current step index and cached steps.
+   */
+  private destroyActiveTask() {
+    StorageManager.setStorageKey(
+      StorageManager.getTaskCurrentStepStorageKey(this.activeTask!),
+      undefined,
+    );
+    StorageManager.setStorageKey(
+      StorageManager.getTaskStepStorageStorageKey(this.activeTask!),
+      undefined,
+    );
+    StorageManager.setStorageKey(
+      StorageManager.getActiveTaskStorageKey(),
+      undefined,
+    );
+    this.activeTask = undefined;
+    this.activeDriverTask = undefined;
   }
 
   /**

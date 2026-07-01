@@ -85,6 +85,7 @@ const util = {
     maxIntervals = 6,
   ): Promise<Element | undefined> {
     if (!selector) {
+      // Return instantly if we're not supposed to wait for an element.
       return;
     }
     return util.retryWithCallback(
@@ -131,7 +132,11 @@ const util = {
         probeInterval * maxIntervals
       } (${probeInterval} * ${maxIntervals}) ms.`,
     );
-    return undefined;
+    return Promise.reject(
+      `Failed to confirm ${consoleName} after waiting ${
+        probeInterval * maxIntervals
+      } (${probeInterval} * ${maxIntervals}) ms.`,
+    );
   },
   /**
    * Decides which buttons should be visible in the modal, and updates the DOM.
@@ -242,18 +247,31 @@ const util = {
       adjacentStepIndex.toString(),
     );
 
-    const targetedElement = await util.waitForAdjacentStepElement(
-      currentStepActiveIndex,
-      adjacentStep,
-      guidedTourManager,
-    );
-
-    util.handleAdjacentStepTransition(
-      guidedTourManager,
-      adjacentStep,
-      adjacentStepIndex,
-      targetedElement,
-    );
+    await util
+      .waitForAdjacentStepElement(
+        currentStepActiveIndex,
+        adjacentStep,
+        guidedTourManager,
+      )
+      .then((targetedElement) => {
+        util.handleAdjacentStepTransition(
+          guidedTourManager,
+          adjacentStep,
+          adjacentStepIndex,
+          targetedElement,
+        );
+        return;
+      })
+      .catch((e) => {
+        console.error(e);
+        // Set the current step index to the right one, since we set it preemptively above to anticipate a redirect.
+        // This is so .destroy() sets the right task status (DONE or SKIPPED).
+        StorageManager.setStorageKey(
+          StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
+          currentStepActiveIndex.toString(),
+        );
+        guidedTourManager.activeDriverTask!.destroy();
+      });
   },
   handleAdjacentStepTransition(
     guidedTourManager: DefaultGuidedTourManager,
@@ -278,7 +296,7 @@ const util = {
 util.addPageUnloadingListener();
 
 /**
- * This is a function to ensure each call has it's own object, and subsequent manipulation doesn't alter the defaults.
+ * This is a function to ensure each call has its own object, and subsequent manipulation doesn't alter the defaults.
  */
 function XWikiDriverConfig(
   guidedTourManager: DefaultGuidedTourManager,
@@ -332,26 +350,6 @@ function XWikiDriverConfig(
           ? TourTaskStatus.DONE
           : TourTaskStatus.SKIPPED;
       guidedTourManager.setTaskStatus(guidedTourTask, status);
-      // Delete the current step storage key.
-      StorageManager.setStorageKey(
-        StorageManager.getTaskCurrentStepStorageKey(
-          guidedTourManager.activeTask!,
-        ),
-        undefined,
-      );
-      // Clear the step cache.
-      StorageManager.setStorageKey(
-        StorageManager.getTaskStepStorageStorageKey(
-          guidedTourManager.activeTask!,
-        ),
-        undefined,
-      );
-      StorageManager.setStorageKey(
-        StorageManager.getActiveTaskStorageKey(),
-        undefined,
-      );
-      guidedTourManager.activeTask = undefined;
-      guidedTourManager.activeDriverTask = undefined;
     },
     // TODO: Remove this linter disable and refactor the function.
     onNextClick: async () => {
@@ -416,26 +414,46 @@ function wrapTask(
 ): Driver {
   const _drive = guidedTourTask.drive;
   guidedTourTask.drive = async function (stepIndex: number = 0) {
-    StorageManager.setStorageKey(
-      StorageManager.getTaskStepStorageStorageKey(
-        guidedTourManager.activeTask!,
-      ),
-      JSON.stringify(guidedTourManager.activeTask!.steps!),
+    const loadingNotification = new XWiki.widgets.Notification(
+      "Loading task...",
+      "inprogress",
     );
-    StorageManager.setStorageKey(
-      StorageManager.getTaskCurrentStepStorageKey(
-        guidedTourManager.activeTask!,
-      ),
-      stepIndex.toString(),
-    );
-    bindReflexEvents(
-      await util.waitForElement(
-        guidedTourManager.activeTask!.steps![stepIndex].element,
-      ),
-      guidedTourManager.activeTask!.steps![stepIndex],
-      guidedTourManager,
-    );
-    _drive(stepIndex);
+    await util
+      .waitForElement(guidedTourManager.activeTask!.steps![stepIndex].element)
+      .then((element) => {
+        bindReflexEvents(
+          element,
+          guidedTourManager.activeTask!.steps![stepIndex],
+          guidedTourManager,
+        );
+        StorageManager.setStorageKey(
+          StorageManager.getTaskStepStorageStorageKey(
+            guidedTourManager.activeTask!,
+          ),
+          JSON.stringify(guidedTourManager.activeTask!.steps!),
+        );
+        StorageManager.setStorageKey(
+          StorageManager.getTaskCurrentStepStorageKey(
+            guidedTourManager.activeTask!,
+          ),
+          stepIndex.toString(),
+        );
+        _drive(stepIndex);
+        loadingNotification.hide();
+        return;
+      })
+      .catch((e) => {
+        // We didn't find the element we wanted. Don't start the task.
+        console.error(e);
+        loadingNotification.replace(
+          new XWiki.widgets.Notification("Could not start task.", "error"),
+        );
+        // Skip the task since we didn't find the element for the first step.
+        guidedTourManager.setTaskStatus(
+          guidedTourManager.activeTask!,
+          TourTaskStatus.SKIPPED,
+        );
+      });
   }.bind(guidedTourTask);
   return guidedTourTask;
 }
@@ -468,7 +486,7 @@ function bindReflexEvents(
     );
   },
 ) {
-  console.warn("Doing reflex bind");
+  console.debug("Doing reflex bind");
   if (!step.reflex || element === undefined) {
     if (step.reflex && element === undefined) {
       console.warn("WARNING: reflex step with empty element:", step);
