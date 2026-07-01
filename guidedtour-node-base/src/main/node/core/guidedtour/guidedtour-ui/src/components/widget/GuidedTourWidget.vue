@@ -139,7 +139,6 @@ onMounted(() => {
     .getTours()
     .then((tours) => {
       state.tours = tours.flatMap((t) => ref(t));
-      console.debug(state.tours);
       // initExistingTask() requires the cache to be already fetched by getTours().
       reactiveGuidedTourManager.initExistingTask();
       state.waitingLoadAsync++;
