@@ -44,10 +44,17 @@ export interface TourCache {
  * @beta
  */
 export class TourStore {
+  public currentUserReference: Promise<string>;
   private readonly _cache: TourCache = {
     tours: [],
     toursMap: new Map(),
   };
+
+  // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
+  constructor(xwikiMeta: Promise) {
+    // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
+    this.currentUserReference = xwikiMeta.then((xm) => xm.userReference);
+  }
 
   /**
    * Read-only access to the current cache state.
@@ -60,8 +67,8 @@ export class TourStore {
    * Replace the full tour list, rebuild the map, and set {@link TourTask#tourId}
    * on every nested task.
    */
-  public updateTours(tours: TourTour[]) {
-    this.populateTourTasks(tours);
+  public async updateTours(tours: TourTour[]) {
+    await this.populateTourTasks(tours);
     this._cache.tours = tours;
     this._cache.toursMap = new Map(tours.map((t) => [t.id, t]));
   }
@@ -82,11 +89,11 @@ export class TourStore {
    * @param tourId - The id of the tour.
    * @param tasks - The new task list.
    */
-  public updateTourTasks(tourId: string, tasks: TourTask[]) {
+  public async updateTourTasks(tourId: string, tasks: TourTask[]) {
     const tour = this._cache.toursMap.get(tourId);
     if (tour) {
       // Update the reference (since it's an object, it updates in the array too)
-      this.setupTasks(tasks, tourId);
+      await this.setupTasks(tasks, tourId);
       tour.tasksList = tasks;
     } else {
       console.warn(
@@ -99,18 +106,18 @@ export class TourStore {
   /**
    * Set {@link TourTask#tourId} on all tasks in every tour.
    */
-  private populateTourTasks(tours: TourTour[]) {
+  private async populateTourTasks(tours: TourTour[]) {
     for (const tour of tours) {
-      this.setupTasks(tour.tasksList ?? [], tour.id);
+      await this.setupTasks(tour.tasksList ?? [], tour.id);
     }
   }
 
   /**
    * Assign the tour id to each task so that tasks know their parent tour.
    */
-  private setupTasks(tasks: TourTask[], tourId: string) {
+  private async setupTasks(tasks: TourTask[], tourId: string) {
     const userTaskStatuses: Map<string, TourTaskStatus> =
-      this.getLocalUserTaskStatuses();
+      this.getLocalUserTaskStatuses(await this.currentUserReference);
     for (const task of tasks) {
       task.tourId = tourId;
       // FIXME: Use this for guest users only.
@@ -120,9 +127,12 @@ export class TourStore {
     }
   }
 
-  private getLocalUserTaskStatuses(): Map<string, TourTaskStatus> {
-    const userTaskStatusesStr =
-      StorageManager.getStorageKey("userTaskStatuses");
+  private getLocalUserTaskStatuses(
+    userReference: string,
+  ): Map<string, TourTaskStatus> {
+    const userTaskStatusesStr = StorageManager.getStorageKey(
+      StorageManager.getUserTaskStatusesStorageKey(userReference),
+    );
     if (!userTaskStatusesStr) {
       console.warn("No task statuses in sessionStorage");
       return new Map();

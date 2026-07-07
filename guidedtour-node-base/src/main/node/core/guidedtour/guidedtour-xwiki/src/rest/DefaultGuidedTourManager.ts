@@ -51,6 +51,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * The currently active driver.js instance, if a task is in progress.
    */
   activeDriverTask?: Driver;
+  // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
+  xm: Promise;
 
   /**
    * The currently active task, if a task is in progress.
@@ -64,8 +66,11 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   /**
    * @param sharedStore - Shared in-memory cache for tours, tasks, and steps.
    */
-  constructor(sharedStore: TourStore) {
+  // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
+  constructor(xwikiMeta: Promise, sharedStore: TourStore) {
     this.sharedStore = sharedStore;
+    this.xm = xwikiMeta;
+
     const restClient = new GuidedTourRestClient();
     this.defaultTourManagerApi = new DefaultTourManagerApi(
       restClient,
@@ -97,7 +102,9 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
     // For guest users, set the session storage for persistence.
     StorageManager.setStorageKey(
-      "userTaskStatuses",
+      StorageManager.getUserTaskStatusesStorageKey(
+        (await this.xm).userReference,
+      ),
       JSON.stringify(taskStatuses),
     );
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
