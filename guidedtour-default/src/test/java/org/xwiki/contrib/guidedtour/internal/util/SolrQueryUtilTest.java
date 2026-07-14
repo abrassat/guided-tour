@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.xwiki.query.Query;
 import org.xwiki.query.QueryManager;
+import org.xwiki.query.internal.DefaultQuery;
 import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
@@ -46,7 +47,7 @@ public class SolrQueryUtilTest
     private QueryManager queryManager;
 
     @Mock
-    private Query query;
+    private DefaultQuery query;
 
     @Mock
     private QueryResponse queryResponse;
