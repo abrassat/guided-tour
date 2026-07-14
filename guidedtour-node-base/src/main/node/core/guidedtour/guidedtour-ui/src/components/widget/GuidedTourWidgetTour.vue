@@ -56,7 +56,7 @@
         </template>
         <template v-slot:post-btns>
           <button
-            v-if="status == TourTaskStatus.TODO"
+            v-if="tour.value.status == TourTaskStatus.TODO"
             class="post-btn"
             @click.stop="onSkipTour"
           >
@@ -73,8 +73,9 @@
             <GuidedTourWidgetTask
               v-for="task in state.tasks"
               :key="task.id"
-              :task="ref(task)"
+              :task="task"
               :tour-id="props.tour.value.id"
+              @taskStatusChanged="onTaskStatusChanged"
             />
           </template>
           <template #fallback>
@@ -97,7 +98,7 @@
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTask from "./GuidedTourWidgetTask.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, inject, onMounted, reactive, ref } from "vue";
+import { inject, onMounted, reactive, ref } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
@@ -105,8 +106,10 @@ import type {
 } from "@xwiki/contrib-guidedtour-api";
 import type { Ref } from "vue";
 const props = defineProps<{ tour: Ref<TourTour> }>();
-const status = computed(() => props.tour.value.status);
-
+const status = ref(props.tour.value.status);
+function onTaskStatusChanged() {
+  status.value = props.tour.value.status;
+}
 defineEmits(["toggleCollapseTour"]);
 const guidedTourManager: GuidedTourManager = inject(
   "DefaultGuidedTourManager",
@@ -121,6 +124,7 @@ async function onSkipTour() {
       guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED),
     ),
   );
+  status.value = props.tour.value.status;
 }
 
 async function onResetTour() {
@@ -129,6 +133,7 @@ async function onResetTour() {
       guidedTourManager.setTaskStatus(task, TourTaskStatus.TODO),
     ),
   );
+  status.value = props.tour.value.status;
 }
 
 onMounted(async () => {
@@ -144,7 +149,7 @@ onMounted(async () => {
 .guidedtour-tour.tour-DONE .guidedtour-tour-header .tour-title {
   text-decoration: line-through;
   color: var(
-    --guidedtour-text-color
+    --guidedtour-background-color
   ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
 
