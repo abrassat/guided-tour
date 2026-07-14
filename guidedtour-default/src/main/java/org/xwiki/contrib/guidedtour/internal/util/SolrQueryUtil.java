@@ -76,7 +76,6 @@ public class SolrQueryUtil
         query.bindValue("fq", fq);
         query.bindValue("fl", filteredLines);
         query.bindValue("group", true).bindValue("group.field", "fullname").bindValue("group.main", true);
-        // Respect the view rights of the current user.
 
         return ((QueryResponse) query.execute().get(0)).getResults();
     }
