@@ -81,6 +81,22 @@ const { task, tourId } = defineProps<{
   tourId: string;
 }>();
 
+const prebtns = useTemplateRef("prebtns");
+const state = reactive({
+  isWaitingAsync: false,
+});
+const { isWaitingAsync } = toRefs(state);
+const guidedTourManager: GuidedTourManager = inject(
+  "DefaultGuidedTourManager",
+)!;
+const emit = defineEmits(["taskStatusChanged"]);
+async function onResetTask() {
+  isWaitingAsync.value = true;
+  await guidedTourManager.setTaskStatus(task!, TourTaskStatus.TODO);
+  emit("taskStatusChanged", task);
+  isWaitingAsync.value = false;
+}
+
 const dependentTasks: (TourTask | undefined)[] = task.dependsOn
   ? await Promise.all(
       task.dependsOn!.map(async (taskId: string) => {
@@ -101,7 +117,7 @@ function checkDependentTasksCompleted() {
 function getDependencyHint() {
   let uncompletedDeps: TourTask[] = [];
   for (let dep of dependentTasks) {
-    if (dep && dep.status !== TourTaskStatus.TODO) {
+    if (dep && dep.status !== TourTaskStatus.DONE) {
       uncompletedDeps.push(dep);
     }
   }
@@ -121,22 +137,6 @@ function playShakeAnimation(element: HTMLElement | null) {
     void element.offsetWidth; // force reflow
     element.classList.add("shake-anim");
   }
-}
-
-const prebtns = useTemplateRef("prebtns");
-const state = reactive({
-  isWaitingAsync: false,
-});
-const { isWaitingAsync } = toRefs(state);
-const guidedTourManager: GuidedTourManager = inject(
-  "DefaultGuidedTourManager",
-)!;
-const emit = defineEmits(["taskStatusChanged"]);
-async function onResetTask() {
-  isWaitingAsync.value = true;
-  await guidedTourManager.setTaskStatus(task!, TourTaskStatus.TODO);
-  emit("taskStatusChanged", task);
-  isWaitingAsync.value = false;
 }
 
 async function onSkipTask() {
