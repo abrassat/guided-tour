@@ -90,8 +90,6 @@
 
 <script setup lang="ts">
 //import type { I18n } from "vue-i18n";
-// All the logic should live here (TODO: Maybe move most of it to a .ts file)
-// FIXME: This should be injected from somewhere else, but I have no idea from where.
 import GuidedTourWidgetHeader from "./GuidedTourWidgetHeader.vue";
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTour from "./GuidedTourWidgetTour.vue";
@@ -112,12 +110,11 @@ const { guidedTourManager } = defineProps<{
 const reactiveGuidedTourManager = reactive(guidedTourManager);
 
 provide<GuidedTourManager>(
-  "DefaultGuidedTourManager",
+  "GuidedTourManager",
   reactiveGuidedTourManager!,
 );
 
 const state = reactive({
-  guidedTourManager: reactiveGuidedTourManager,
   isWidgetCollapsed: true,
   tours: [] as Ref<TourTour>[],
   usefulLinks: [] as string[],
@@ -138,7 +135,7 @@ onMounted(() => {
   reactiveGuidedTourManager
     .getTours()
     .then((tours) => {
-      state.tours = tours.flatMap((t) => ref(t));
+      state.tours = tours.map((t) => ref(t));
       // initExistingTask() requires the cache to be already fetched by getTours().
       reactiveGuidedTourManager.initExistingTask();
       state.waitingLoadAsync++;

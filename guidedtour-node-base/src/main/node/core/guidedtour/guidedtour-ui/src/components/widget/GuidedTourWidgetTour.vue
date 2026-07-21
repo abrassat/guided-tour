@@ -70,12 +70,13 @@
       <div class="guidedtour-content">
         <Suspense>
           <template #default>
-            <GuidedTourWidgetTask
-              v-for="task in state.tasks"
-              :key="task.id"
-              :task="ref(task)"
-              :tour-id="props.tour.value.id"
-            />
+            <template v-for="task in tasks" :key="task.value.id">
+              <GuidedTourWidgetTask
+                v-if="task.value.active"
+                :task="task"
+                :tour-id="props.tour.value.id"
+              />
+            </template>
           </template>
           <template #fallback>
             <!-- Have some placeholders loading -->
@@ -97,7 +98,7 @@
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTask from "./GuidedTourWidgetTask.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, inject, onMounted, reactive, ref } from "vue";
+import { computed, inject, onMounted, ref, shallowRef } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
@@ -108,33 +109,29 @@ const props = defineProps<{ tour: Ref<TourTour> }>();
 const status = computed(() => props.tour.value.status);
 
 defineEmits(["toggleCollapseTour"]);
-const guidedTourManager: GuidedTourManager = inject(
-  "DefaultGuidedTourManager",
-)!;
-const state = reactive({
-  tasks: [] as TourTask[],
-});
+const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
+const tasks = shallowRef<Ref<TourTask>[]>([]);
 
 async function onSkipTour() {
   await Promise.all(
-    state.tasks.map((task) =>
-      guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED),
+    tasks.value.map((task) =>
+      guidedTourManager.setTaskStatus(task.value, TourTaskStatus.SKIPPED),
     ),
   );
 }
 
 async function onResetTour() {
   await Promise.all(
-    state.tasks.map((task) =>
-      guidedTourManager.setTaskStatus(task, TourTaskStatus.TODO),
+    tasks.value.map((task) =>
+      guidedTourManager.setTaskStatus(task.value, TourTaskStatus.TODO),
     ),
   );
 }
 
 onMounted(async () => {
-  const tasks = await guidedTourManager.getTasks(props.tour.value.id);
-  state.tasks = tasks ?? ([] as TourTask[]);
-  if (!tasks) {
+  const fetchedTasks = await guidedTourManager.getTasks(props.tour.value.id);
+  tasks.value = (fetchedTasks ?? []).map((task) => ref(task));
+  if (!fetchedTasks) {
     console.error("No tasks");
   }
 });

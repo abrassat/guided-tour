@@ -79,9 +79,7 @@ const state = reactive({
   isWaitingAsync: false,
 });
 const { isWaitingAsync } = toRefs(state);
-const guidedTourManager: GuidedTourManager = inject(
-  "DefaultGuidedTourManager",
-)!;
+const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
 async function onResetTask() {
   isWaitingAsync.value = true;
   await guidedTourManager.setTaskStatus(task.value, TourTaskStatus.TODO);
