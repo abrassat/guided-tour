@@ -75,48 +75,40 @@ const util = {
    * Wait until an element is visible on the page.
    *
    * @param selector - css selector for the element to wait for (should be compatible with document.querySelector)
-   * @param probeInterval - time (in ms) to wait after a failed check for the specified element
-   * @param maxIntervals - how many probe intervals to wait until rejecting
    * @returns a promise which succeeds if the element is found within the time limit, and fails otherwise
    */
   async waitForElement(
     selector: string | undefined,
-    probeInterval = 500,
-    maxIntervals = 6,
   ): Promise<Element | undefined> {
     if (!selector) {
       // Return instantly if we're not supposed to wait for an element.
       return;
     }
-    return util.retryWithCallback(
-      () => {
-        const queriedElement = document.querySelector(selector);
-        if (queriedElement && util.isElementVisible(queriedElement)) {
-          return queriedElement;
-        } else {
-          return undefined;
-        }
-      },
-      probeInterval,
-      maxIntervals,
-      selector,
-    );
+    return util.retryWithCallback(() => {
+      const queriedElement = document.querySelector(selector);
+      if (queriedElement && util.isElementVisible(queriedElement)) {
+        return queriedElement;
+      } else {
+        return undefined;
+      }
+    }, selector);
   },
   /**
    *
    * @param callbackFn - The function to run to test if our goal has been achieved. Should return truthy if achieved,
    *     false otherwise (if we still need to wait)
-   * @param probeInterval - time (in ms) to wait after a failed check for the specified element
+   * @param probeInterval - time (in ms) to wait after a failed check for the specified element. Decrease this argument
+   *                to get a quicker response once the specified element.
    * @param maxIntervals - how many probe intervals to wait until rejecting
    * @param consoleName - For debugging, to display in console
-   * @returns undefined for timeout, the return value of callbackFn if successful.
+   * @returns the return value of callbackFn if successful, or a failed Promise if the timeout is reached.
    */
   async retryWithCallback<T>(
-    callbackFn: () => T | undefined,
+    callbackFn: () => T,
+    consoleName = "something",
     probeInterval = 50,
     maxIntervals = 60,
-    consoleName = "something",
-  ) {
+  ): Promise<T> {
     // TODO: Could maybe use MutationObservers here?
     console.debug(`waiting for ${consoleName}...`);
     for (let i = 0; i < maxIntervals; i += 1) {
@@ -127,11 +119,6 @@ const util = {
       console.debug(`(${i}/${maxIntervals}) waiting for ${consoleName}...`);
       await new Promise((resolve) => setTimeout(resolve, probeInterval));
     }
-    console.debug(
-      `Failed to confirm ${consoleName} after waiting ${
-        probeInterval * maxIntervals
-      } (${probeInterval} * ${maxIntervals}) ms.`,
-    );
     return Promise.reject(
       `Failed to confirm ${consoleName} after waiting ${
         probeInterval * maxIntervals
