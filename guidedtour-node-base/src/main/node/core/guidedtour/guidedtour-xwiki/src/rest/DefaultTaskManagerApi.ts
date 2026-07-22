@@ -44,6 +44,7 @@ export class DefaultTaskManagerApi implements TaskManagerApi {
    * Get all tasks for a tour. Returns cached data if available.
    */
   public async getTasks(tourId: string): Promise<TourTask[]> {
+    // FIXME: What if the tour data is not fetched yet?
     const tasks = this.sharedStore.getTourTasks(tourId);
 
     if (tasks.length == 0) {

@@ -199,6 +199,7 @@ const util = {
         return targetedElement;
       });
   },
+  // eslint-disable-next-line max-statements
   async moveToAdjacentStep(
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
@@ -234,31 +235,28 @@ const util = {
       adjacentStepIndex.toString(),
     );
 
-    await util
-      .waitForAdjacentStepElement(
+    try {
+      const targetedElement = await util.waitForAdjacentStepElement(
         currentStepActiveIndex,
         adjacentStep,
         guidedTourManager,
-      )
-      .then((targetedElement) => {
-        util.handleAdjacentStepTransition(
-          guidedTourManager,
-          adjacentStep,
-          adjacentStepIndex,
-          targetedElement,
-        );
-        return;
-      })
-      .catch((e) => {
-        console.error(e);
-        // Set the current step index to the right one, since we set it preemptively above to anticipate a redirect.
-        // This is so .destroy() sets the right task status (DONE or SKIPPED).
-        StorageManager.setStorageKey(
-          StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
-          currentStepActiveIndex.toString(),
-        );
-        guidedTourManager.activeDriverTask!.destroy();
-      });
+      );
+      util.handleAdjacentStepTransition(
+        guidedTourManager,
+        adjacentStep,
+        adjacentStepIndex,
+        targetedElement,
+      );
+    } catch (e) {
+      console.error(e);
+      // Set the current step index to the right one, since we set it preemptively above to anticipate a redirect.
+      // This is so .destroy() sets the right task status (DONE or SKIPPED).
+      StorageManager.setStorageKey(
+        StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
+        currentStepActiveIndex.toString(),
+      );
+      guidedTourManager.activeDriverTask!.destroy();
+    }
   },
   handleAdjacentStepTransition(
     guidedTourManager: DefaultGuidedTourManager,
@@ -400,47 +398,49 @@ function wrapTask(
   guidedTourManager: DefaultGuidedTourManager,
 ): Driver {
   const _drive = guidedTourTask.drive;
+  // eslint-disable-next-line max-statements
   guidedTourTask.drive = async function (stepIndex: number = 0) {
+    // TODO: Add translation as part of GUIDEDTOUR-4.
     const loadingNotification = new XWiki.widgets.Notification(
       "Loading task...",
       "inprogress",
     );
-    await util
-      .waitForElement(guidedTourManager.activeTask!.steps![stepIndex].element)
-      .then((element) => {
-        bindReflexEvents(
-          element,
-          guidedTourManager.activeTask!.steps![stepIndex],
-          guidedTourManager,
-        );
-        StorageManager.setStorageKey(
-          StorageManager.getTaskStepStorageStorageKey(
-            guidedTourManager.activeTask!,
-          ),
-          JSON.stringify(guidedTourManager.activeTask!.steps!),
-        );
-        StorageManager.setStorageKey(
-          StorageManager.getTaskCurrentStepStorageKey(
-            guidedTourManager.activeTask!,
-          ),
-          stepIndex.toString(),
-        );
-        _drive(stepIndex);
-        loadingNotification.hide();
-        return;
-      })
-      .catch((e) => {
-        // We didn't find the element we wanted. Don't start the task.
-        console.error(e);
-        loadingNotification.replace(
-          new XWiki.widgets.Notification("Could not start task.", "error"),
-        );
-        // Skip the task since we didn't find the element for the first step.
-        guidedTourManager.setTaskStatus(
+    try {
+      const targetedElement = await util.waitForElement(
+        guidedTourManager.activeTask!.steps![stepIndex].element,
+      );
+      bindReflexEvents(
+        targetedElement,
+        guidedTourManager.activeTask!.steps![stepIndex],
+        guidedTourManager,
+      );
+      StorageManager.setStorageKey(
+        StorageManager.getTaskStepStorageStorageKey(
           guidedTourManager.activeTask!,
-          TourTaskStatus.SKIPPED,
-        );
-      });
+        ),
+        JSON.stringify(guidedTourManager.activeTask!.steps!),
+      );
+      StorageManager.setStorageKey(
+        StorageManager.getTaskCurrentStepStorageKey(
+          guidedTourManager.activeTask!,
+        ),
+        stepIndex.toString(),
+      );
+      _drive(stepIndex);
+      loadingNotification.hide();
+      return;
+    } catch (e) {
+      // We didn't find the element we wanted. Don't start the task.
+      console.error(e);
+      loadingNotification.replace(
+        new XWiki.widgets.Notification("Could not start task.", "error"),
+      );
+      // Skip the task since we didn't find the element for the first step.
+      guidedTourManager.setTaskStatus(
+        guidedTourManager.activeTask!,
+        TourTaskStatus.SKIPPED,
+      );
+    }
   }.bind(guidedTourTask);
   return guidedTourTask;
 }
