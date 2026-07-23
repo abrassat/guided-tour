@@ -278,6 +278,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       if (parsedIds === undefined) {
         console.error("No good task parsing value:", parsedIds);
       } else {
+        // Populate the cache by fetching all tours first.
+        await this.getTours();
         const task = await this.getTask(
           parsedIds["tourId"],
           parsedIds["taskId"],
@@ -323,10 +325,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       undefined,
     );
     StorageManager.setStorageKey(
-      StorageManager.getTaskStepStorageStorageKey(this.activeTask!),
-      undefined,
-    );
-    StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
       undefined,
     );
@@ -338,23 +336,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * Get all steps for a task by delegating to {@link DefaultStepManagerApi}.
    */
   async getSteps(tourId: string, taskId: string): Promise<TourStep[]> {
-    // FIXME: This parsing step should be moved elsewhere.
-    let parsedCachedSteps;
-    try {
-      parsedCachedSteps = JSON.parse(
-        StorageManager.getStorageKey(
-          StorageManager.getTaskStepStorageStorageKey(
-            (await this.getTask(tourId, taskId))!,
-          ),
-        ) ?? "",
-      ) as TourStep[];
-      console.info("Using cached steps:", parsedCachedSteps);
-    } catch {
-      console.info("No cached guidedtour steps.");
-    }
-    return (
-      parsedCachedSteps ??
-      (await this.defaultStepManagerApi.getSteps(tourId, taskId))
-    );
+    return await this.defaultStepManagerApi.getSteps(tourId, taskId);
   }
 }

@@ -415,12 +415,6 @@ function wrapTask(
         guidedTourManager,
       );
       StorageManager.setStorageKey(
-        StorageManager.getTaskStepStorageStorageKey(
-          guidedTourManager.activeTask!,
-        ),
-        JSON.stringify(guidedTourManager.activeTask!.steps!),
-      );
-      StorageManager.setStorageKey(
         StorageManager.getTaskCurrentStepStorageKey(
           guidedTourManager.activeTask!,
         ),
