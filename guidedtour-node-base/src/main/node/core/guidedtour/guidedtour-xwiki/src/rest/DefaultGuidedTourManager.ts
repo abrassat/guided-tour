@@ -309,17 +309,17 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
     if (task === this.activeTask) {
       // Since we're setting the task status, it means we're done with all steps. So destroy the active task.
-      this.destroyActiveTask();
+      this.cleanupActiveTask();
     }
     // Sync with storage.
     await this.saveUserTaskStatuses(this);
   }
 
   /**
-   * Delete all data pertaining to the current task in progress.
+   * Clear all data pertaining to the current task in progress.
    * Deletes the active task object, and the Session Storage keys for current step index and cached steps.
    */
-  private destroyActiveTask() {
+  private cleanupActiveTask() {
     StorageManager.setStorageKey(
       StorageManager.getTaskCurrentStepStorageKey(this.activeTask!),
       undefined,

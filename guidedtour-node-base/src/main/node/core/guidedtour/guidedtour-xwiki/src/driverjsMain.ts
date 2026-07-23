@@ -50,6 +50,8 @@ const util = {
 
     function onSkipAll() {
       guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
+      // FIXME: `.destroy()` recomputes the task status, so the line above is overridden.
+      guidedTourManager.activeDriverTask?.destroy();
     }
 
     customSkipAll.onclick = onSkipAll;
@@ -97,7 +99,7 @@ const util = {
    * @param callbackFn - The function to run to test if our goal has been achieved. Should return truthy if achieved,
    *     false otherwise (if we still need to wait)
    * @param probeInterval - time (in ms) to wait after a failed check for the specified element. Decrease this argument
-   *                to get a quicker response once the specified element.
+   *                to get a quicker response once the specified element appears in the page.
    * @param maxIntervals - how many probe intervals to wait until rejecting
    * @param consoleName - For debugging, to display in console
    * @returns the return value of callbackFn if successful, or a failed Promise if the timeout is reached.
@@ -322,7 +324,9 @@ function wrapTask(
     );
     const currentStepActiveIndex = guidedTourTask.getActiveIndex();
     try {
-      const targetedElement = await util.waitForElement(guidedTourManager.activeTask!.steps![stepIndex].element);
+      const targetedElement = await util.waitForElement(
+        guidedTourManager.activeTask!.steps![stepIndex].element,
+      );
       if (
         hasActiveStepIndexChanged(
           currentStepActiveIndex,
@@ -375,11 +379,13 @@ function wrapTask(
         ),
         stepIndex.toString(),
       );
-      // Skip the task since we didn't find the element for the first step.
+      // Skip the task since we didn't find the step's targeted element in the page.
       guidedTourManager.setTaskStatus(
         guidedTourManager.activeTask!,
         TourTaskStatus.SKIPPED,
       );
+      // FIXME: `.destroy()` recomputes the task status, so the line above is overridden.
+      guidedTourManager.activeDriverTask?.destroy();
     }
   }.bind(guidedTourTask);
   return guidedTourTask;
