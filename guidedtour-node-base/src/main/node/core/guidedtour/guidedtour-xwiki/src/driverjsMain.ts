@@ -50,7 +50,6 @@ const util = {
 
     function onSkipAll() {
       guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
-      guidedTourManager.activeDriverTask?.destroy();
     }
 
     customSkipAll.onclick = onSkipAll;
@@ -156,54 +155,9 @@ const util = {
     const stepOffset = direction == "next" ? 1 : -1;
     return guidedTourTask.steps?.[currentStepActiveIndex + stepOffset];
   },
-  /**
-   * This function will wait until the targeted element of the adjacentStep is visible in the page. If the driverJs step changed while waiting for the element, return false.
-   *
-   * @param thisStepActiveIndex - The index of the current step. Used to determine if the step moved while we were waiting for the element to appear.
-   * @param adjacentStep - The step we want to get to, so we can test that its targeted element exists
-   * @param guidedTourManager - Reference to the guidedTourManager, used for various API calls
-   * @returns - The Element if it was found after waiting for it; false if the active driverJs step changed in the meantime; undefined if waiting for the element timed out
-   */
-  async waitForAdjacentStepElement(
-    thisStepActiveIndex: number,
-    adjacentStep: TourStep,
-    guidedTourManager: DefaultGuidedTourManager,
-  ): Promise<false | Element | undefined> {
-    return await util
-      .waitForElement(adjacentStep.element)
-      .then((targetedElement) => {
-        if (
-          thisStepActiveIndex !=
-          guidedTourManager.activeDriverTask!.getActiveIndex()
-        ) {
-          // The task moved to some other step while we were waiting, so no need to do anything.
-          return false;
-        }
-
-        if (
-          adjacentStep.element !== undefined &&
-          targetedElement === undefined
-        ) {
-          // We didn't find the expected element in the page, so the task is probably broken, so skip it.
-          console.error(
-            `Failed to find ${adjacentStep.element} element in the page when going to step ${adjacentStep.order}`,
-            adjacentStep,
-          );
-          new XWiki.widgets.Notification(
-            "Failed to find targeted element. Skipping the task.",
-            "error",
-          );
-          guidedTourManager.activeDriverTask!.destroy();
-          return false;
-        }
-        return targetedElement;
-      });
-  },
-  // eslint-disable-next-line max-statements
   async moveToAdjacentStep(
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
-    currentStepActiveIndex: number,
     direction: StepDirection,
   ) {
     /*
@@ -217,6 +171,10 @@ const util = {
       // Don't do anything if the page is currently in the process of redirecting.
       return;
     }
+    // Cache the current step index, so we can check later (after async operations) if we are in the same step
+    // we started in.
+    const currentStepActiveIndex =
+      guidedTourManager.activeDriverTask!.getActiveIndex()!;
     const adjacentStep = util.getAdjacentStep(
       guidedTourTask,
       currentStepActiveIndex,
@@ -235,46 +193,9 @@ const util = {
       adjacentStepIndex.toString(),
     );
 
-    try {
-      const targetedElement = await util.waitForAdjacentStepElement(
-        currentStepActiveIndex,
-        adjacentStep,
-        guidedTourManager,
-      );
-      util.handleAdjacentStepTransition(
-        guidedTourManager,
-        adjacentStep,
-        adjacentStepIndex,
-        targetedElement,
-      );
-    } catch (e) {
-      console.error(e);
-      // Set the current step index to the right one, since we set it preemptively above to anticipate a redirect.
-      // This is so .destroy() sets the right task status (DONE or SKIPPED).
-      StorageManager.setStorageKey(
-        StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
-        currentStepActiveIndex.toString(),
-      );
-      guidedTourManager.activeDriverTask!.destroy();
-    }
-  },
-  handleAdjacentStepTransition(
-    guidedTourManager: DefaultGuidedTourManager,
-    adjacentStep: TourStep,
-    adjacentStepIndex: number,
-    targetedElement: Element | undefined | false,
-  ) {
-    if (targetedElement) {
-      bindReflexEvents(targetedElement, adjacentStep, guidedTourManager);
-      // Move to the adjacent step.
-      guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
-      return;
-    }
-
-    if (adjacentStep.element !== undefined && targetedElement === undefined) {
-      // Something went wrong if we can't find the targeted element. Skip this task.
-      guidedTourManager.activeDriverTask!.destroy();
-    }
+    // The `.drive()` method is overridden in xwiki to wait for elements to appear in the page, thus making it async (as
+    // opposed to driver.js's default non-async method).
+    await guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
   },
 };
 
@@ -336,28 +257,13 @@ function XWikiDriverConfig(
           : TourTaskStatus.SKIPPED;
       guidedTourManager.setTaskStatus(guidedTourTask, status);
     },
-    // TODO: Remove this linter disable and refactor the function.
     onNextClick: async () => {
-      // Cache the current step index, so we can check later (after async operations) if we are in the same step
-      // we started in.
-      const thisStepActiveIndex =
-        guidedTourManager.activeDriverTask!.getActiveIndex()!;
-      await util.moveToAdjacentStep(
-        guidedTourTask,
-        guidedTourManager,
-        thisStepActiveIndex,
-        "next",
-      );
+      await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
     },
     onPrevClick: async () => {
-      // Cache the current step index, so we can check later (after async operations) if we are in the same step
-      // we started in.
-      const thisStepActiveIndex =
-        guidedTourManager.activeDriverTask!.getActiveIndex()!;
       await util.moveToAdjacentStep(
         guidedTourTask,
         guidedTourManager,
-        thisStepActiveIndex,
         "previous",
       );
     },
@@ -397,18 +303,36 @@ function wrapTask(
   guidedTourTask: Driver,
   guidedTourManager: DefaultGuidedTourManager,
 ): Driver {
+  function hasActiveStepIndexChanged(
+    previousActiveStepIndex: number | undefined,
+    currentStepActiveIndex: number | undefined,
+  ) {
+    return (
+      previousActiveStepIndex !== undefined &&
+      currentStepActiveIndex != previousActiveStepIndex
+    );
+  }
   const _drive = guidedTourTask.drive;
   // eslint-disable-next-line max-statements
   guidedTourTask.drive = async function (stepIndex: number = 0) {
     // TODO: Add translation as part of GUIDEDTOUR-4.
     const loadingNotification = new XWiki.widgets.Notification(
-      "Loading task...",
+      "Loading task step...",
       "inprogress",
     );
+    const currentStepActiveIndex = guidedTourTask.getActiveIndex();
     try {
-      const targetedElement = await util.waitForElement(
-        guidedTourManager.activeTask!.steps![stepIndex].element,
-      );
+      const targetedElement = await util.waitForElement(guidedTourManager.activeTask!.steps![stepIndex].element);
+      if (
+        hasActiveStepIndexChanged(
+          currentStepActiveIndex,
+          guidedTourTask.getActiveIndex(),
+        )
+      ) {
+        // The active step moved while waiting for the element, so don't do anything.
+        loadingNotification.hide();
+        return;
+      }
       bindReflexEvents(
         targetedElement,
         guidedTourManager.activeTask!.steps![stepIndex],
@@ -424,10 +348,32 @@ function wrapTask(
       loadingNotification.hide();
       return;
     } catch (e) {
-      // We didn't find the element we wanted. Don't start the task.
+      if (
+        hasActiveStepIndexChanged(
+          currentStepActiveIndex,
+          guidedTourTask.getActiveIndex(),
+        )
+      ) {
+        // The active step moved while waiting for the element, so don't do anything.
+        loadingNotification.hide();
+        return;
+      }
+      // We didn't find the element we wanted. Don't proceed with the task.
       console.error(e);
+      // TODO: Add translation as part of GUIDEDTOUR-4.
       loadingNotification.replace(
-        new XWiki.widgets.Notification("Could not start task.", "error"),
+        new XWiki.widgets.Notification(
+          "Error while moving between task steps.",
+          "error",
+        ),
+      );
+      // Set the current step index to the right one, since we set it preemptively in some cases to anticipate a
+      // redirect. This is so .destroy() sets the right task status (DONE or SKIPPED).
+      StorageManager.setStorageKey(
+        StorageManager.getTaskCurrentStepStorageKey(
+          guidedTourManager.activeTask!,
+        ),
+        stepIndex.toString(),
       );
       // Skip the task since we didn't find the element for the first step.
       guidedTourManager.setTaskStatus(
@@ -462,7 +408,6 @@ function bindReflexEvents(
     void util.moveToAdjacentStep(
       guidedTourManager.activeTask!,
       guidedTourManager,
-      activeIndex,
       "next",
     );
   },
