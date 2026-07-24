@@ -248,6 +248,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getActiveTaskStorageKey(),
       StorageManager.getStorageKeyPrefix(task),
     );
+    StorageManager.setStorageKey(
+      StorageManager.getTaskStepStorageStorageKey(task),
+      JSON.stringify(task.steps!),
+    );
 
     this.activeTask = task;
     this.activeDriverTask = wrapTask(driverTour, this);
@@ -323,6 +327,9 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     const currentStepKey = StorageManager.getTaskCurrentStepStorageKey(
       this.activeTask!,
     );
+    const stepStorageKey = StorageManager.getTaskStepStorageStorageKey(
+      this.activeTask!,
+    );
 
     this.activeTask = undefined;
     // this.activeTask is used as a flag to tell `onDestroy()` to not re-compute the task status.
@@ -330,6 +337,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     this.activeDriverTask = undefined;
     // Update the storage keys last, since they could be used in `onDestroy()` to compute the task status.
     StorageManager.setStorageKey(currentStepKey, undefined);
+    StorageManager.setStorageKey(stepStorageKey, undefined);
     StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
       undefined,
@@ -340,6 +348,23 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * Get all steps for a task by delegating to {@link DefaultStepManagerApi}.
    */
   async getSteps(tourId: string, taskId: string): Promise<TourStep[]> {
-    return await this.defaultStepManagerApi.getSteps(tourId, taskId);
+    // FIXME: This parsing step should be moved elsewhere.
+    let parsedCachedSteps;
+    try {
+      parsedCachedSteps = JSON.parse(
+        StorageManager.getStorageKey(
+          StorageManager.getTaskStepStorageStorageKey(
+            (await this.getTask(tourId, taskId))!,
+          ),
+        ) ?? "",
+      ) as TourStep[];
+      console.info("Using cached steps:", parsedCachedSteps);
+    } catch {
+      console.info("No cached guidedtour steps.");
+    }
+    return (
+      parsedCachedSteps ??
+      (await this.defaultStepManagerApi.getSteps(tourId, taskId))
+    );
   }
 }

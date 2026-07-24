@@ -56,6 +56,10 @@ export class StorageManager {
     return this.getStorageKeyPrefix(task) + "_currentStep";
   }
 
+  static getTaskStepStorageStorageKey(task: TourTask): string {
+    return this.getStorageKeyPrefix(task) + "_steps";
+  }
+
   static getUserTaskStatusesStorageKey(user: string): string {
     return "userTaskStatuses_" + user;
   }
