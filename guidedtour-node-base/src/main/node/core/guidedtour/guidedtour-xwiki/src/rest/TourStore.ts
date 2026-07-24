@@ -78,6 +78,7 @@ export class TourStore {
    */
   public getTourTasks(tourId: string): TourTask[] {
     // FIXME: What if we need to fetch the cache in this step? (i.e. a valid tour is not in the cache)
+    // To fix as part of GUIDEDTOUR-23.
     // this.setupTasks(this.cache.toursMap.get(tourId)?.tasksList ?? [], tourId);
     return this._cache.toursMap.get(tourId)?.tasksList ?? [];
   }
