@@ -271,8 +271,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getActiveTaskStorageKey(),
     );
     if (existingActiveTask) {
-      // FIXME: I shouldn't parse this here, but have it already available somehow more easily.
-      // Also, this parsing is not robust to pages which contains the `__` separator present in the item value.
       const parsedIds =
         StorageManager.parseStorageKeyPrefix(existingActiveTask);
       if (parsedIds === undefined) {
@@ -299,6 +297,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
   /**
    * Update the status of a task and clear the associated session storage keys.
+   * If the given task is the currently active task, the task will be instantly ended.
    * @param task - The task whose status to change.
    * @param status - The new status (TODO, SKIPPED, or DONE).
    */
@@ -309,27 +308,32 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
     if (task === this.activeTask) {
       // Since we're setting the task status, it means we're done with all steps. So destroy the active task.
-      this.cleanupActiveTask();
+      this.destroyActiveTask();
     }
     // Sync with storage.
     await this.saveUserTaskStatuses(this);
   }
 
   /**
-   * Clear all data pertaining to the current task in progress.
+   * Delete all data pertaining to the current task in progress.
    * Deletes the active task object, and the Session Storage keys for current step index and cached steps.
+   * Will also end the active task which is in progress.
    */
-  private cleanupActiveTask() {
-    StorageManager.setStorageKey(
-      StorageManager.getTaskCurrentStepStorageKey(this.activeTask!),
-      undefined,
+  private destroyActiveTask() {
+    const currentStepKey = StorageManager.getTaskCurrentStepStorageKey(
+      this.activeTask!,
     );
+
+    this.activeTask = undefined;
+    // this.activeTask is used as a flag to tell `onDestroy()` to not re-compute the task status.
+    this.activeDriverTask?.destroy();
+    this.activeDriverTask = undefined;
+    // Update the storage keys last, since they could be used in `onDestroy()` to compute the task status.
+    StorageManager.setStorageKey(currentStepKey, undefined);
     StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
       undefined,
     );
-    this.activeTask = undefined;
-    this.activeDriverTask = undefined;
   }
 
   /**

@@ -50,8 +50,6 @@ const util = {
 
     function onSkipAll() {
       guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
-      // FIXME: `.destroy()` recomputes the task status, so the line above is overridden.
-      guidedTourManager.activeDriverTask?.destroy();
     }
 
     customSkipAll.onclick = onSkipAll;
@@ -246,18 +244,23 @@ function XWikiDriverConfig(
     },
     onDestroyed: function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
-      // The state is empty when this function is called.
-      const status =
-        Number.parseInt(
-          StorageManager.getStorageKey(
-            StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
-          ) ?? "-1",
-        ) +
-          1 >=
-        guidedTourTask.steps!.length
-          ? TourTaskStatus.DONE
-          : TourTaskStatus.SKIPPED;
-      guidedTourManager.setTaskStatus(guidedTourTask, status);
+      // The state provided by driver.js is empty when this function is called.
+      if (guidedTourManager.activeTask === undefined) {
+        // The task status was already set by an external command, so don't recompute the status here.
+        return;
+      } else {
+        const currentStepIndex =
+          Number.parseInt(
+            StorageManager.getStorageKey(
+              StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
+            ) ?? "-1",
+          ) + 1;
+        const status =
+          currentStepIndex >= guidedTourTask.steps!.length
+            ? TourTaskStatus.DONE
+            : TourTaskStatus.SKIPPED;
+        guidedTourManager.setTaskStatus(guidedTourTask, status);
+      }
     },
     onNextClick: async () => {
       await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
@@ -371,21 +374,11 @@ function wrapTask(
           "error",
         ),
       );
-      // Set the current step index to the right one, since we set it preemptively in some cases to anticipate a
-      // redirect. This is so .destroy() sets the right task status (DONE or SKIPPED).
-      StorageManager.setStorageKey(
-        StorageManager.getTaskCurrentStepStorageKey(
-          guidedTourManager.activeTask!,
-        ),
-        stepIndex.toString(),
-      );
       // Skip the task since we didn't find the step's targeted element in the page.
       guidedTourManager.setTaskStatus(
         guidedTourManager.activeTask!,
         TourTaskStatus.SKIPPED,
       );
-      // FIXME: `.destroy()` recomputes the task status, so the line above is overridden.
-      guidedTourManager.activeDriverTask?.destroy();
     }
   }.bind(guidedTourTask);
   return guidedTourTask;
