@@ -26,9 +26,13 @@ import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
 
 type StepDirection = "next" | "previous";
 const util = {
+  /**
+   * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
+   * step). This flag is true when the page is being unloaded before a redirect (after a `beforeunload` event).
+   */
   pageUnloadingFlag: false,
   /**
-   * Useful for blocking task progression while redirecting to another page.
+   * Add listener so `pageUnloadingFlag` is set to true on `beforeunload` event trigger.
    */
   addPageUnloadingListener() {
     window.addEventListener("beforeunload", () => {

@@ -49,11 +49,9 @@ export class TourStore {
     tours: [],
     toursMap: new Map(),
   };
-  private readonly xm;
 
   // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
-  constructor(xwikiMeta) {
-    this.xm = xwikiMeta;
+  constructor(private readonly xm) {
     this.currentUserReference = this.xm.userReference;
   }
 
@@ -121,7 +119,7 @@ export class TourStore {
       this.getLocalUserTaskStatuses(this.currentUserReference);
     for (const task of tasks) {
       task.tourId = tourId;
-      // FIXME: Use this for guest users only.
+      // FIXME: Use this for guest users only. To be done as part of GUIDEDTOUR-2
       task.status =
         userTaskStatuses.get(StorageManager.getStorageKeyPrefix(task)) ??
         task.status;
