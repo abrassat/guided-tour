@@ -25,16 +25,16 @@
 -->
 
 <template>
-  <template v-if="props.tour.value">
+  <template v-if="props.tour">
     <section
-      :id="props.tour.value.id"
+      :id="props.tour.id"
       class="guidedtour-tour"
       :class="{
         ['tour-' + status]: true,
-        collapsed: props.tour.value.isCollapsed,
+        collapsed: props.tour.isCollapsed,
         hidden:
-          (props.tour.value.tasksList?.length ?? 0) == 0 ||
-          !(props.tour.value.active ?? false),
+          (props.tour.tasksList?.length ?? 0) == 0 ||
+          !(props.tour.active ?? false),
       }"
     >
       <!-- FIXME: The active check should probably be done in the REST API -->
@@ -43,8 +43,8 @@
         :waiting="ref(false)"
         class="guidedtour-tour-header"
         @click="
-          console.log('clicked', props.tour.value);
-          $emit('toggleCollapseTour', props.tour.value);
+          console.log('clicked', props.tour);
+          $emit('toggleCollapseTour', props.tour);
         "
       >
         <template v-slot:pre-btns>
@@ -52,7 +52,7 @@
           <i class="fa-solid fa-chevron-right chevron always-show" />
         </template>
         <template v-slot:item-title>
-          <span class="tour-title">{{ props.tour.value.title }}</span>
+          <span class="tour-title">{{ props.tour.title }}</span>
         </template>
         <template v-slot:post-btns>
           <button
@@ -70,11 +70,11 @@
       <div class="guidedtour-content">
         <Suspense>
           <template #default>
-            <template v-for="task in tasks" :key="task.value.id">
+            <template v-for="task in tasks" :key="task.id">
               <GuidedTourWidgetTask
-                v-if="task.value.active"
+                v-if="task.active"
                 :task="task"
-                :tour-id="props.tour.value.id"
+                :tour-id="props.tour.id"
               />
             </template>
           </template>
@@ -98,24 +98,26 @@
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTask from "./GuidedTourWidgetTask.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, inject, onMounted, ref, shallowRef } from "vue";
+import { computed, inject, onMounted, ref, shallowReactive } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
-import type { Ref } from "vue";
-const props = defineProps<{ tour: Ref<TourTour> }>();
-const status = computed(() => props.tour.value.status);
+import type { ShallowReactive } from "vue";
+const props = defineProps<{ tour: ShallowReactive<TourTour> }>();
+const status = computed(() => {
+  return props.tour.status;
+});
 
 defineEmits(["toggleCollapseTour"]);
 const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
-const tasks = shallowRef<Ref<TourTask>[]>([]);
+const tasks = ref<ShallowReactive<TourTask>[]>([]);
 
 async function onSkipTour() {
   await Promise.all(
     tasks.value.map((task) =>
-      guidedTourManager.setTaskStatus(task.value, TourTaskStatus.SKIPPED),
+      guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED),
     ),
   );
 }
@@ -123,14 +125,14 @@ async function onSkipTour() {
 async function onResetTour() {
   await Promise.all(
     tasks.value.map((task) =>
-      guidedTourManager.setTaskStatus(task.value, TourTaskStatus.TODO),
+      guidedTourManager.setTaskStatus(task, TourTaskStatus.TODO),
     ),
   );
 }
 
 onMounted(async () => {
-  const fetchedTasks = await guidedTourManager.getTasks(props.tour.value.id);
-  tasks.value = (fetchedTasks ?? []).map((task) => ref(task));
+  const fetchedTasks = await guidedTourManager.getTasks(props.tour.id);
+  tasks.value = (fetchedTasks ?? []).map((task) => shallowReactive(task));
   if (!fetchedTasks) {
     console.error("No tasks");
   }

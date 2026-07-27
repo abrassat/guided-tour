@@ -51,7 +51,7 @@
         <template v-else-if="state.tours.length > 0">
           <GuidedTourWidgetTour
             v-for="tour in state.tours"
-            :key="tour.value.id"
+            :key="tour.id"
             :tour="tour"
             @toggleCollapseTour="
               (tour: TourTour) => {
@@ -95,28 +95,23 @@ import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTour from "./GuidedTourWidgetTour.vue";
 import GuidedTourWidgetUsefulLink from "./GuidedTourWidgetUsefulLink.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, onMounted, provide, reactive, ref } from "vue";
+import { computed, onMounted, provide, reactive, shallowReactive } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
-import type { Ref } from "vue";
+import type { ShallowReactive } from "vue";
 
 const { guidedTourManager } = defineProps<{
   guidedTourManager: GuidedTourManager;
 }>();
 
-const reactiveGuidedTourManager = reactive(guidedTourManager);
-
-provide<GuidedTourManager>(
-  "GuidedTourManager",
-  reactiveGuidedTourManager!,
-);
+provide<GuidedTourManager>("GuidedTourManager", guidedTourManager!);
 
 const state = reactive({
   isWidgetCollapsed: true,
-  tours: [] as Ref<TourTour>[],
+  tours: [] as ShallowReactive<TourTour>[],
   usefulLinks: [] as string[],
   isWidgetShown: true,
   toursLoadError: "",
@@ -132,12 +127,12 @@ function onCloseGuidedTourWidget(buttonClicked: boolean) {
 onMounted(() => {
   // TODO: Split these into two Async components, so they can load independently (The links can show up earlier than the tasks, etc...)
   state.waitingLoadAsync = 0;
-  reactiveGuidedTourManager
+  guidedTourManager
     .getTours()
     .then((tours) => {
-      state.tours = tours.map((t) => ref(t));
+      state.tours = tours.map((t) => shallowReactive(t));
       // initExistingTask() requires the cache to be already fetched by getTours().
-      reactiveGuidedTourManager.initExistingTask();
+      guidedTourManager.initExistingTask();
       state.waitingLoadAsync++;
       return tours;
     })
@@ -147,7 +142,7 @@ onMounted(() => {
       state.toursLoadError = e;
       state.waitingLoadAsync++;
     });
-  reactiveGuidedTourManager
+  guidedTourManager
     .getUsefulLinks()
     .then((usefulLinks) => {
       state.usefulLinks = usefulLinks;
@@ -159,12 +154,12 @@ onMounted(() => {
       state.waitingLoadAsync++;
     });
   // TODO: This should come from the localStorage
-  // state.isWidgetShown = await reactiveGuidedTourManager.isWidgetShown();
+  // state.isWidgetShown = await guidedTourManager.isWidgetShown();
 });
 // FIXME: The .val property is a workaround, so vue doesn't auto-unwrap the progress, thus making it non-reactive.
 const progress = {
   val: computed(() => {
-    const allTasks: TourTask[] = state.tours.flatMap((t) => t.value.tasksList!);
+    const allTasks: TourTask[] = state.tours.flatMap((t) => t.tasksList!);
     return (
       allTasks.filter(
         (task: TourTask) =>
