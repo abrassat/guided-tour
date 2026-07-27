@@ -26,7 +26,6 @@
 
 <template>
   <GuidedTourWidgetItem
-    v-if="task.active"
     :loading="false"
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
@@ -68,15 +67,14 @@ import type {
   GuidedTourManager,
   TourTask,
 } from "@xwiki/contrib-guidedtour-api";
-import type { Reactive } from "vue";
+import type { ShallowReactive } from "vue";
 
 const { task, tourId } = defineProps<{
-  task: Reactive<TourTask>;
+  task: ShallowReactive<TourTask>;
   tourId: string;
 }>();
 
 const status = computed(() => {
-  console.log("Recomputed task status", task);
   return task.status;
 });
 console.log(status);
