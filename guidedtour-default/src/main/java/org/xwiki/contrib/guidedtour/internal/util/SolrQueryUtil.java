@@ -26,6 +26,7 @@ import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -34,6 +35,7 @@ import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.query.Query;
 import org.xwiki.query.QueryException;
 import org.xwiki.query.QueryManager;
+import org.xwiki.query.SecureQuery;
 
 /**
  * Utility class to execute Solr queries.
@@ -62,20 +64,26 @@ public class SolrQueryUtil
      * @param qs the query string to execute
      * @param fq the filter query to apply to the results
      * @param fl the list of fields to return in the results
+     * @param sort the sorting criteria to apply to the results, can be null or empty if no sorting is needed
      * @return the results of the query as a {@link SolrDocumentList}
      * @throws QueryException if there is an error executing the query
      */
-    public SolrDocumentList executeQuery(String qs, String fq, List<String> fl) throws QueryException
+    public SolrDocumentList executeQuery(String qs, String fq, List<String> fl, String sort) throws QueryException
     {
         List<String> filteredLines = new ArrayList<>(fl);
         filteredLines.add(REFERENCE_KEY);
         filteredLines.add(WIKI_KEY);
         filteredLines.add(SPACES_KEY);
         filteredLines.add(NAME_KEY);
-        Query query = queryManager.createQuery(qs, "solr");
+        Query query = this.queryManager.createQuery(qs, "solr");
         query.bindValue("fq", fq);
         query.bindValue("fl", filteredLines);
         query.bindValue("group", true).bindValue("group.field", "fullname").bindValue("group.main", true);
+        if (StringUtils.isNotBlank(sort)) {
+            query.bindValue("sort", sort);
+        }
+        // Respect the view rights of the current user.
+        ((SecureQuery) query).checkCurrentUser(true);
 
         return ((QueryResponse) query.execute().get(0)).getResults();
     }

@@ -103,6 +103,7 @@ public class StepsManager
         for (BaseObject stepObject : stepObjects) {
             steps.add(getStepDTO(stepObject));
         }
+        steps.sort(Comparator.comparingInt(StepDTO::getOrder));
         return steps;
     }
 
@@ -194,13 +195,12 @@ public class StepsManager
     {
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
-        DocumentReference tourDocRef = documentReferenceResolver.resolve(tourId);
+        DocumentReference tourDocRef = this.documentReferenceResolver.resolve(tourId);
         if (wiki.exists(tourDocRef, wikiContext)) {
-            DocumentReference taskDocRef = documentReferenceResolver.resolve(taskId, tourDocRef);
+            DocumentReference taskDocRef = this.documentReferenceResolver.resolve(taskId, tourDocRef);
             if (wiki.exists(taskDocRef, wikiContext)) {
                 XWikiDocument taskDoc = wiki.getDocument(taskDocRef, wikiContext);
-                return taskDoc.getXObjects(STEP_CLASS).stream()
-                    .filter(Objects::nonNull)
+                return taskDoc.getXObjects(STEP_CLASS).stream().filter(Objects::nonNull)
                     .sorted(Comparator.comparingInt(step -> step.getIntValue(TourProperty.ORDER.getBaseKey())))
                     .toList();
             } else {
@@ -217,9 +217,7 @@ public class StepsManager
         List<BaseObject> existingSteps = getStepObjects(tourId, taskId);
         int highestOrder = 0;
         if (!existingSteps.isEmpty()) {
-            if (existingSteps.stream()
-                .anyMatch(step -> step.getIntValue(TourProperty.ORDER.getBaseKey()) == stepId))
-            {
+            if (existingSteps.stream().anyMatch(step -> step.getIntValue(TourProperty.ORDER.getBaseKey()) == stepId)) {
                 throw new DuplicatedIdException("A step with the given order [%d] already exists.", stepId);
             }
             highestOrder =
