@@ -21,6 +21,7 @@ package org.xwiki.contrib.guidedtour.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -262,7 +263,8 @@ public class TasksManager
     {
         String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
         String dependsOn = (String) document.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX));
-        long order = (Long) document.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX));
+        long order =
+            (Long) Optional.ofNullable(document.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).orElse(0L);
         boolean isActive = SolrQueryUtil.getIsActiveProperty(document, CLASS_PREFIX);
 
         return new TaskDTO(documentReference.getName(), title, (int) order, isActive,
