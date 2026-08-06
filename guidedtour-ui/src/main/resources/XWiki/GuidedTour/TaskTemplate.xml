@@ -338,7 +338,7 @@
       <isActive/>
     </property>
     <property type="Long">
-      <order/>
+      <order>0</order>
     </property>
     <property type="String">
       <title/>

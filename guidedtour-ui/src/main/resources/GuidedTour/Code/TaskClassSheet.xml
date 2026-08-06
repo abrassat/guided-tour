@@ -504,6 +504,11 @@ $doc.display($property.name, $task)
         stepManager.addStep();
       });
     }
+    // Auto-complete the title field with the page title.
+    const titleField = document.querySelector('[id="XWiki.GuidedTour.TaskClass_0_title"]');
+    if (titleField.value.empty()) {
+      titleField.value = XWiki.currentPage;
+    }
     // Handle the order hidden input as part of the drag &amp; drop operation, if the page is in edit mode.
     $('.sidebar .item-list').sortable({
       items: '.item',
