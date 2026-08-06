@@ -28,6 +28,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.xwiki.component.annotation.Component;
@@ -105,19 +106,20 @@ public class TasksManager
      *
      * @param tourId the id of the tour to which the task belongs
      * @param taskDTO the {@link TaskDTO} containing the task information
+     * @return the id of the created task
      * @throws XWikiException if there is an error while creating the task document
      * @throws QueryException if there is an error while querying for existing tasks to determine the order of the
      *     new task
      * @throws DuplicatedIdException if a task with the same id already exists in the tour
      * @throws InvalidIdException if the tour with the given id does not exist
      */
-    public void createTask(String tourId, TaskDTO taskDTO)
+    public String createTask(String tourId, TaskDTO taskDTO)
         throws XWikiException, QueryException, DuplicatedIdException, InvalidIdException
     {
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
         DocumentReference tourDocRef = getTourReference(tourId);
-        String taskId = this.nameValidator.transform(taskDTO.getId());
+        String taskId = validateTaskId(taskDTO);
         DocumentReference taskDocRef = this.documentReferenceResolver.resolve(taskId, tourDocRef);
         if (wiki.exists(taskDocRef, wikiContext)) {
             throw new DuplicatedIdException("Task page [%s] already exists.", taskDocRef);
@@ -129,6 +131,7 @@ public class TasksManager
         taskDTO.setOrder(++highestOrder);
         populateTaskObject(taskDTO, taskClassObject);
         wiki.saveDocument(taskDoc, "Task created.", wikiContext);
+        return taskId;
     }
 
     /**
@@ -146,18 +149,46 @@ public class TasksManager
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:%s AND name:%s", parentSpace, taskId);
-        SolrDocumentList results = this.queryUtil.executeQuery(QS, fq, FILTERED_LINES);
+        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:\"%s\" AND name:\"%s\"", parentSpace, taskId);
+        SolrDocumentList results = this.queryUtil.executeQuery(QS, fq, FILTERED_LINES, "");
         if (results.isEmpty()) {
             throw new InvalidIdException(TASK_NOT_FOUND_ERROR, taskId);
         }
-        SolrDocument document = results.get(0);
+        SolrDocument document = results.getFirst();
         EntityReference documentReference = this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
         return getTaskDTO(document, documentReference);
     }
 
     /**
-     * Retrieves all tasks for a given tour id.
+     * Retrieves all tasks for a given tour id and with the title containing the given string.
+     *
+     * @param tourId the id of the tour to which the tasks belong
+     * @param filteredTitle the title to filter the tasks by, can be empty or null if no filtering is needed
+     * @return a list of {@link TaskDTO} containing the tasks information
+     * @throws QueryException if there is an error while executing the Solr query to retrieve the task documents
+     * @throws XWikiException if there is an error while interacting with the XWiki API
+     * @throws InvalidIdException if the tour with the given id does not exist
+     * @since 0.2
+     */
+    public List<TaskDTO> getAllTasks(String tourId, String filteredTitle)
+        throws QueryException, XWikiException, InvalidIdException
+    {
+        DocumentReference tourDocRef = getTourReference(tourId);
+        String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
+        String fq = formFilterQuery(filteredTitle, parentSpace);
+        SolrDocumentList solrDocuments =
+            this.queryUtil.executeQuery(QS, fq, FILTERED_LINES, TourProperty.ORDER.formKey(CLASS_PREFIX) + " asc");
+        List<TaskDTO> tasks = new ArrayList<>(solrDocuments.size());
+        for (SolrDocument document : solrDocuments) {
+            EntityReference documentReference =
+                this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
+            tasks.add(getTaskDTO(document, documentReference));
+        }
+        return tasks;
+    }
+
+    /**
+     * Calls {@link #getAllTasks(String, String)} with an empty search title.
      *
      * @param tourId the id of the tour to which the tasks belong
      * @return a list of {@link TaskDTO} containing the tasks information
@@ -167,17 +198,7 @@ public class TasksManager
      */
     public List<TaskDTO> getAllTasks(String tourId) throws QueryException, XWikiException, InvalidIdException
     {
-        DocumentReference tourDocRef = getTourReference(tourId);
-        String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:%s", parentSpace);
-        SolrDocumentList solrDocuments = this.queryUtil.executeQuery(QS, fq, FILTERED_LINES);
-        List<TaskDTO> tasks = new ArrayList<>(solrDocuments.size());
-        for (SolrDocument document : solrDocuments) {
-            EntityReference documentReference =
-                this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
-            tasks.add(getTaskDTO(document, documentReference));
-        }
-        return tasks;
+        return getAllTasks(tourId, "");
     }
 
     /**
@@ -192,6 +213,7 @@ public class TasksManager
      */
     public void updateTask(String tourId, TaskDTO newDTO) throws XWikiException, QueryException, InvalidIdException
     {
+        // We get all tasks as we will have to update the order of remaining tasks.
         List<TaskDTO> existingTasks = getAllTasks(tourId);
         TaskDTO oldTask = getTaskDTOFromList(newDTO.getId(), existingTasks);
         int oldOrder = oldTask.getOrder();
@@ -215,17 +237,41 @@ public class TasksManager
      */
     public void deleteTask(String tourId, String taskId) throws XWikiException, QueryException, InvalidIdException
     {
+        // We get all tasks as we will have to update the order of remaining tasks.
         List<TaskDTO> existingTasks = getAllTasks(tourId);
         TaskDTO targetTask = getTaskDTOFromList(taskId, existingTasks);
         existingTasks.remove(targetTask);
         // The existence of the tour document is already checked in the getAllTasks method.
         DocumentReference tourDocRef = this.documentReferenceResolver.resolve(tourId);
-        updateTasksOrder(tourDocRef, Integer.MAX_VALUE, existingTasks, targetTask.getOrder());
-        DocumentReference taskDocRef =
-            this.documentReferenceResolver.resolve(taskId, this.documentReferenceResolver.resolve(tourId));
-        XWikiContext wikiContext = wikiContextProvider.get();
+        DocumentReference taskDocRef = this.documentReferenceResolver.resolve(taskId, tourDocRef);
+        XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
         wiki.deleteAllDocuments(wiki.getDocument(taskDocRef, wikiContext), wikiContext);
+        updateRemainingTasks(existingTasks, targetTask, tourDocRef);
+    }
+
+    private String formFilterQuery(String searchedTitle, String parentSpace)
+    {
+        StringBuilder fq = new StringBuilder(String.format("{!q.op=AND} type:DOCUMENT AND space:\"%s\"", parentSpace));
+        if (StringUtils.isNotBlank(searchedTitle)) {
+            fq.append(" AND ");
+            fq.append(TourProperty.TITLE.formKey(CLASS_PREFIX)).append("_lowercase:*");
+            fq.append(searchedTitle.toLowerCase().replace(" ", "\\ ")).append("*");
+        }
+        return fq.toString();
+    }
+
+    private String validateTaskId(TaskDTO taskDTO)
+    {
+        String unvalidatedId = taskDTO.getId();
+        if (StringUtils.isBlank(unvalidatedId)) {
+            unvalidatedId = taskDTO.getTitle();
+        }
+        String validatedId = this.nameValidator.transform(unvalidatedId);
+        if (StringUtils.isBlank(validatedId)) {
+            throw new RuntimeException("Given DTO is missing both id and title, cannot create a task.");
+        }
+        return validatedId;
     }
 
     private TaskDTO getTaskDTOFromList(String taskId, List<TaskDTO> existingTasks) throws InvalidIdException
@@ -245,15 +291,78 @@ public class TasksManager
         }
     }
 
-    private void updateTasksOrder(DocumentReference tourRef, int modifiedOrder, List<TaskDTO> existingTasks,
-        int oldOrder) throws XWikiException
+    /**
+     * Check and update the remaining tasks order and dependency list depending on the removed task.
+     *
+     * @param existingTasks remaining tasks list
+     * @param removedTask the task that was removed
+     * @param tourDocRef the reference to the tour document
+     */
+    private void updateRemainingTasks(List<TaskDTO> existingTasks, TaskDTO removedTask, DocumentReference tourDocRef)
+        throws XWikiException
     {
         for (TaskDTO task : existingTasks) {
-            if (task.getOrder() > oldOrder && task.getOrder() <= modifiedOrder) {
-                task.setOrder(task.getOrder() - 1);
-                updateTaskObject(task, tourRef);
-            } else if (task.getOrder() < oldOrder && task.getOrder() >= modifiedOrder) {
-                task.setOrder(task.getOrder() + 1);
+            // We only shift those tasks that have an order greater than the removed task's order, as they need to be
+            // shifted down to fill the gap.
+            boolean wasOrderModified = shiftOrderIfNeeded(Integer.MAX_VALUE, task, removedTask.getOrder());
+            boolean wasDependencyRemoved = removeTaskDependency(task, removedTask.getId());
+            // If either the order was shifted or the task dependency list was modified, we update the object to
+            // persist the changes.
+            if (wasOrderModified || wasDependencyRemoved) {
+                updateTaskObject(task, tourDocRef);
+            }
+        }
+    }
+
+    /**
+     * If the removed task is a dependency for the given task, we remove it from the list.
+     *
+     * @param task the task for which we check the list
+     * @param removedTaskId the ID of the task to remove from dependencies
+     * @return true if the dependency was removed, false otherwise
+     * @since 0.2
+     */
+    private boolean removeTaskDependency(TaskDTO task, String removedTaskId)
+    {
+        boolean isModified = false;
+        if (task.getDependsOn().contains(removedTaskId)) {
+            ArrayList<String> updatedDependencies = new ArrayList<>(task.getDependsOn());
+            updatedDependencies.remove(removedTaskId);
+            task.setDependsOn(updatedDependencies);
+            isModified = true;
+        }
+        return isModified;
+    }
+
+    /**
+     * Shifts the order of the given task to accommodate a task being moved or deleted. If the task's order is above the
+     * previous position and at or below the new position, it is shifted down by one. If the task's order is below the
+     * previous position and at or above the new position, it is shifted up by one.
+     *
+     * @param newOrder the new order position of the moved task
+     * @param task the task whose order may need to be shifted
+     * @param previousOrder the original order position before the move or deletion
+     * @return {@code true} if the task's order was modified, {@code false} otherwise
+     * @since 0.2
+     */
+    private boolean shiftOrderIfNeeded(int newOrder, TaskDTO task, int previousOrder)
+    {
+        boolean isModified = false;
+        if (task.getOrder() > previousOrder && task.getOrder() <= newOrder) {
+            task.setOrder(task.getOrder() - 1);
+            isModified = true;
+        } else if (task.getOrder() < previousOrder && task.getOrder() >= newOrder) {
+            task.setOrder(task.getOrder() + 1);
+            isModified = true;
+        }
+        return isModified;
+    }
+
+    private void updateTasksOrder(DocumentReference tourRef, int newOrder, List<TaskDTO> existingTasks,
+        int previousOrder) throws XWikiException
+    {
+        for (TaskDTO task : existingTasks) {
+            if (shiftOrderIfNeeded(newOrder, task, previousOrder)) {
                 updateTaskObject(task, tourRef);
             }
         }

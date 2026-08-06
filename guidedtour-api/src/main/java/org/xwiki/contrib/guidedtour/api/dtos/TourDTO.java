@@ -40,6 +40,8 @@ public class TourDTO
 
     private String title;
 
+    private String description;
+
     private boolean isActive;
 
     private List<TaskDTO> tasks;
@@ -51,6 +53,7 @@ public class TourDTO
     {
         this.isActive = false;
         this.tasks = new ArrayList<>();
+        this.description = "";
     }
 
     /**
@@ -66,6 +69,44 @@ public class TourDTO
         this.id = id;
         this.isActive = isActive;
         this.tasks = new ArrayList<>();
+        this.description = "";
+    }
+
+    /**
+     * Constructor for TourDTO.
+     *
+     * @param id the id of the tour
+     * @param title the title of the tour
+     * @param isActive {@code true} if the tour is active, {@code false} otherwise
+     * @param description the tour description
+     * @since 0.2
+     */
+    public TourDTO(String id, String title, boolean isActive, String description)
+    {
+        this(id, title, isActive);
+        this.description = description;
+    }
+
+    /**
+     * Gets the description of the tour.
+     *
+     * @return the description of the tour
+     * @since 0.2
+     */
+    public String getDescription()
+    {
+        return this.description;
+    }
+
+    /**
+     * Sets the description of the tour.
+     *
+     * @param description the description to set for the tour
+     * @since 0.2
+     */
+    public void setDescription(String description)
+    {
+        this.description = description;
     }
 
     /**
