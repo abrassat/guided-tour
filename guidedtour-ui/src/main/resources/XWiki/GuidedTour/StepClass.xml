@@ -62,10 +62,10 @@
       <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
     </backdrop>
     <content>
-      <contenttype>FullyRenderedText</contenttype>
+      <contenttype>PureText</contenttype>
       <customDisplay/>
       <disabled>0</disabled>
-      <editor>---</editor>
+      <editor>PureText</editor>
       <hint/>
       <name>content</name>
       <number>9</number>
