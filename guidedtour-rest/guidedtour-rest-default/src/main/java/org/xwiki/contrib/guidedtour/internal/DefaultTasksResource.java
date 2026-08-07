@@ -47,10 +47,10 @@ public class DefaultTasksResource extends AbstractGuidedTourResource implements 
     private TasksManager tasksManager;
 
     @Override
-    public Response getTourTasks(String tourId)
+    public Response getTourTasks(String tourId, String searchedTitle)
     {
         return execute("Tasks API: retrieving the tasks for tour [{}].", () -> {
-            List<TaskDTO> tasks = this.tasksManager.getAllTasks(tourId);
+            List<TaskDTO> tasks = this.tasksManager.getAllTasks(tourId, searchedTitle);
             return Response.ok(tasks).type(MediaType.APPLICATION_JSON_TYPE).build();
         }, tourId);
     }
@@ -68,8 +68,8 @@ public class DefaultTasksResource extends AbstractGuidedTourResource implements 
     public Response createTask(String tourId, TaskDTO taskDTO)
     {
         return execute("Tasks API: creating task [{}] for tour [{}].", () -> {
-            this.tasksManager.createTask(tourId, taskDTO);
-            return Response.status(Response.Status.CREATED).build();
+            String taskId = this.tasksManager.createTask(tourId, taskDTO);
+            return Response.status(Response.Status.CREATED).entity(taskId).type(MediaType.TEXT_PLAIN_TYPE).build();
         }, taskDTO.getId(), tourId);
     }
 
