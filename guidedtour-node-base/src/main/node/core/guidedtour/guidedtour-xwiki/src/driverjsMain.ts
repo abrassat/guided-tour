@@ -283,6 +283,8 @@ function convertToDriverStep(
   step: TourStep,
   guidedTourTask: TourTask,
 ): DriveStep {
+  // FIXME: The content is not HTML escaped, so it should be sanitized here before displaying.
+  // <script> don't seem to be executed anyways.
   return {
     element: step.element,
     popover: {

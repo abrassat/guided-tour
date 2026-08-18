@@ -95,13 +95,13 @@ import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTour from "./GuidedTourWidgetTour.vue";
 import GuidedTourWidgetUsefulLink from "./GuidedTourWidgetUsefulLink.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, onMounted, provide, reactive, shallowReactive } from "vue";
+import { computed, onMounted, provide, reactive } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
-import type { ShallowReactive } from "vue";
+import type { Reactive } from "vue";
 
 const { guidedTourManager } = defineProps<{
   guidedTourManager: GuidedTourManager;
@@ -111,7 +111,7 @@ provide<GuidedTourManager>("GuidedTourManager", guidedTourManager!);
 
 const state = reactive({
   isWidgetCollapsed: true,
-  tours: [] as ShallowReactive<TourTour>[],
+  tours: [] as Reactive<TourTour>[],
   usefulLinks: [] as string[],
   isWidgetShown: true,
   toursLoadError: "",
@@ -130,7 +130,11 @@ onMounted(() => {
   guidedTourManager
     .getTours()
     .then((tours) => {
-      state.tours = tours.map((t) => shallowReactive(t));
+      // Replace the tour objects used by the API with reactive Proxies, so we can listen for status updates.
+      for (let i = 0; i < tours.length; i++) {
+        tours[i] = reactive(tours[i]);
+      }
+      state.tours = tours;
       // initExistingTask() requires the cache to be already fetched by getTours().
       guidedTourManager.initExistingTask();
       state.waitingLoadAsync++;

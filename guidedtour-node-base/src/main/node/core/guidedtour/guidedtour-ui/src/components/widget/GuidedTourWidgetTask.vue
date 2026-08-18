@@ -29,7 +29,7 @@
     :loading="false"
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
-      ['task-' + task.status]: true,
+      ['task-' + status]: true,
       'guidedtour-task': true,
     }"
     :id="task.id"
@@ -67,17 +67,16 @@ import type {
   GuidedTourManager,
   TourTask,
 } from "@xwiki/contrib-guidedtour-api";
-import type { ShallowReactive } from "vue";
+import type { Reactive } from "vue";
 
 const { task, tourId } = defineProps<{
-  task: ShallowReactive<TourTask>;
+  task: Reactive<TourTask>;
   tourId: string;
 }>();
 
 const status = computed(() => {
   return task.status;
 });
-console.log(status);
 
 const state = reactive({
   isWaitingAsync: false,

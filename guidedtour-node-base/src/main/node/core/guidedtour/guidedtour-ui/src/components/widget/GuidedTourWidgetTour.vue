@@ -98,21 +98,21 @@
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTask from "./GuidedTourWidgetTask.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, inject, onMounted, ref, shallowReactive } from "vue";
+import { computed, inject, onMounted, ref } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
-import type { ShallowReactive } from "vue";
-const props = defineProps<{ tour: ShallowReactive<TourTour> }>();
+import type { Reactive } from "vue";
+const props = defineProps<{ tour: Reactive<TourTour> }>();
 const status = computed(() => {
   return props.tour.status;
 });
 
 defineEmits(["toggleCollapseTour"]);
 const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
-const tasks = ref<ShallowReactive<TourTask>[]>([]);
+const tasks = ref<Reactive<TourTask>[]>([]);
 
 async function onSkipTour() {
   await Promise.all(
@@ -131,8 +131,10 @@ async function onResetTour() {
 }
 
 onMounted(async () => {
-  const fetchedTasks = await guidedTourManager.getTasks(props.tour.id);
-  tasks.value = (fetchedTasks ?? []).map((task) => shallowReactive(task));
+  // Initialize the cache first.
+  await guidedTourManager.getTours();
+  const fetchedTasks = (await guidedTourManager.getTasks(props.tour.id)) ?? [];
+  tasks.value = fetchedTasks;
   if (!fetchedTasks) {
     console.error("No tasks");
   }
@@ -140,14 +142,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.guidedtour-tour.tour-DONE .guidedtour-tour-header .tour-title {
+.guidedtour-tour.tour-DONE
+  .guidedtour-tour-header
+  .guidedtour-widget-item-title
+  .tour-title {
   text-decoration: line-through;
   color: var(
     --guidedtour-text-color
   ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
 
-.guidedtour-tour.tour-SKIPPED .guidedtour-tour-header .tour-title {
+.guidedtour-tour.tour-SKIPPED
+  .guidedtour-tour-header
+  .guidedtour-widget-item-title
+  .tour-title {
   color: var(--guidedtour-text-color);
 }
 
