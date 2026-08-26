@@ -36,7 +36,7 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{velocity output='false'}}
+  <content>{{velocity ouptput="false"}}
 #set ($discard = $xwiki.ssx.use('GuidedTour.Code.TaskClassSheet'))
 #set ($discard = $xwiki.jsx.use('GuidedTour.Code.TaskClassSheet'))
 #set ($isEdit = ($xcontext.action == 'edit'))
@@ -366,6 +366,9 @@ $doc.display($property.name, $task)
   const formContainer = stepsListContainer.querySelector('.content');
   const sidebarItemTemplate = sidebarContainer.querySelector('#step-item-template');
 
+  // The sidebar is built as part of the GuidedTourStepSheetManager constructor.
+  const stepManager = new GuidedTourStepSheetManager(formContainer, sidebarContainer);
+
   /**
    * Get the object numbers of all steps currently present on the page.
    * @returns A list of object numbers
@@ -427,6 +430,7 @@ $doc.display($property.name, $task)
     const descriptionField = form.querySelector(`[id="${getStepId(objectIndex)}_content"]`);
     $(descriptionField).on('keyup change', () =&gt; {
       stepItem.querySelector(`.step-item-title`).textContent = getStepTitle(objectIndex, form);
+      stepItem.title = getStepTitle(objectIndex, form);
     });
   }
 
@@ -453,6 +457,7 @@ $doc.display($property.name, $task)
     const item = document.importNode(sidebarItemTemplate.content, true).children[0];
     item.dataset.id = objectIndex;
     item.querySelector('.step-item-title').textContent = getStepTitle(objectIndex, form);
+    item.title = getStepTitle(objectIndex, form);
     item.addEventListener('click', () =&gt; stepManager.showStep(objectIndex));
 
     if (isEdit) {
@@ -461,7 +466,7 @@ $doc.display($property.name, $task)
         event.stopPropagation();
         stepManager.removeStep(objectIndex);
       });
-      // Update title 
+      // Update title dynamically depending on step content.
       bindStepItemTitleUpdate(objectIndex, form, item);
     }
 
@@ -483,8 +488,6 @@ $doc.display($property.name, $task)
   }
 
   // Start work.
-  // The sidebar is built as part of the GuidedTourStepSheetManager constructor.
-  const stepManager = new GuidedTourStepSheetManager(formContainer, sidebarContainer);
 
   $(document).on('xwiki:actions:beforeSave', () =&gt; {
     stepManager.updateHiddenInputs();
@@ -642,18 +645,12 @@ $doc.display($property.name, $task)
     <property type="LargeString">
       <code>:root{
   --sidebar-w: 260px;
-  --bg: #f6f7fb;
-  --card: #ffffff;
-  --muted: #727272;
-  --accent: #2563eb;
-  --radius: 10px;
-  --gap: 20px;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --accent: var(--brand-primary);
 }
 
 .stepsListContainer{
   display:flex;
-  gap:var(--gap);
+  gap:1em;
   align-items:flex-start;
   margin:0 auto;
   width:100%;
@@ -662,16 +659,16 @@ $doc.display($property.name, $task)
 /* Sidebar */
 .stepsListContainer .sidebar{
   width:var(--sidebar-w);
-  border-radius:var(--radius);
+  border-radius:var(--border-radius-large);
   padding:16px;
   flex-shrink:0;
-  border: solid var(--muted);
+  border: solid var(--accent);
 }
 
 .stepsListContainer .sidebar-title{
   margin:0 0 12px 0;
   font-size:14px;
-  color:var(--muted);
+  color:var(--accent);
 }
 
 .stepsListContainer .item-list{
@@ -680,28 +677,24 @@ $doc.display($property.name, $task)
   margin:0;
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:0.3em;
 }
 
-.step-item-title {
-  /*max-width: 60%;*/
+.item .step-item-title {
   text-overflow: ellipsis;
   overflow: hidden;
   text-wrap: nowrap;
 }
 
 .stepsListContainer .item{
-  padding:10px 12px;
-  border-radius:8px;
+  padding:0.7em 1em;
+  border-radius:var(--border-radius-large);
   cursor:pointer;
-  color:#0f172a;
   align-items:center;
   justify-content:space-between;
   transition:all .12s ease;
-  border:1px solid transparent;
   overflow: hidden;
-  /* TODO: Use theme background instead. */
-  background: white;
+  background: var(--xwiki-page-content-bg);
   display: flex;
 }
 
@@ -710,96 +703,26 @@ $doc.display($property.name, $task)
 }
 
 .stepsListContainer .item:hover{
-  transform:translateY(-2px);
-  box-shadow:0 4px 10px rgba(16,24,40,0.06);
+  box-shadow: 0 0 5px 1px color-mix(in srgb,var(--accent) 50%,transparent);
 }
 
 .stepsListContainer .item.active{
-  background:color-mix(in srgb, rgb(37,99,235) 4%, white 96%);
-  border-color:rgba(37,99,235,0.18);
-  color:var(--accent);
-  font-weight:600;
+  background:var(--panel-header-bg);
+  color:var(--panel-header-text);
+  font-weight:var(--font-weight-semibold);
 }
 
 /* Content (form area) */
 .container .content{
   flex:1;
-  background:var(--card);
   padding:20px;
-  border-radius:var(--radius);
-  min-height:320px;
+  border-radius:var(--border-radius-large);
 }
 
-.container .content-title{
-  margin:0 0 16px 0;
-  font-size:18px;
-}
-
-.container .props-form{
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0,1fr));
-  gap:12px 20px;
-  align-items:start;
-}
-
-.container .field{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-.container .field label{
-  font-size:13px;
-  color:var(--muted);
-}
-
-.field input[type="text"],
-.field select,
-.field textarea{
-  padding:10px 12px;
-  border-radius:8px;
-  border:1px solid #e6e9ef;
-  background:#fff;
-  font-size:14px;
-  outline:none;
-  transition:border-color .12s ease, box-shadow .12s ease;
-}
-
-.field input[type="text"]:focus,
-.field select:focus,
-.field textarea:focus{
-  border-color:rgba(37,99,235,0.6);
-  box-shadow:0 4px 10px rgba(37,99,235,0.08);
-}
-
-.field input[type="checkbox"]{
-  width:18px;
-  height:18px;
-  transform:translateY(4px);
-}
-
-/* Make description span full width */
-.field textarea{
-  resize:vertical;
-  min-height:88px;
-  grid-column:1 / -1;
-}
-
-/* Actions row spans full width */
-.container .actions{
-  grid-column:1 / -1;
-  display:flex;
-  gap:10px;
-  justify-content:flex-start;
-  margin-top:6px;
-}
 /* Responsive */
 @media (max-width:880px){
   .container{flex-direction:column}
   .sidebar{width:100%}
-  .props-form{grid-template-columns:1fr}
-  .field textarea{grid-column:1/1}
-  .actions{justify-content:stretch}
 }
 </code>
     </property>
