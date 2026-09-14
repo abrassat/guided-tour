@@ -69,8 +69,8 @@ export class TourStore {
    */
   public updateTours(tours: TourTour[]) {
     this.populateTourTasks(tours);
+    this.clearCache();
     this._cache.tours.push(...tours);
-    this._cache.toursMap.clear();
     for (let i = 0; i < tours.length; i++) {
       this._cache.toursMap.set(tours[i].id, i);
     }
@@ -195,9 +195,8 @@ export class TourStore {
    * Empty the cache entirely.
    */
   public clearCache() {
-    while (this._cache.tours.pop()) {
-      // Empty the tours array while maintaining the same array object.
-    }
+    // Empty the tours array while maintaining the same array object.
+    this._cache.tours.splice(0);
     this._cache.toursMap.clear();
   }
 }
