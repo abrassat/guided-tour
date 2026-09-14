@@ -109,15 +109,15 @@ async function onStartTask() {
 .guidedtour-task.loading-content {
   background: linear-gradient(
     to left,
-    var(--guidedtour-text-color) 0%,
-    var(--guidedtour-text-color) 25%,
-    var(--guidedtour-background-color-secondary) 30%,
-    var(--guidedtour-background-color-secondary) 35%,
-    var(--guidedtour-text-color) 40%,
-    var(--guidedtour-text-color) 75%,
-    var(--guidedtour-background-color-secondary) 80%,
-    var(--guidedtour-background-color-secondary) 85%,
-    var(--guidedtour-text-color) 90%
+    var(--guidedtour-widget-background-color) 0%,
+    var(--guidedtour-widget-background-color) 25%,
+    var(--guidedtour-widget-highlighted-background-color) 30%,
+    var(--guidedtour-widget-highlighted-background-color) 35%,
+    var(--guidedtour-widget-background-color) 40%,
+    var(--guidedtour-widget-background-color) 75%,
+    var(--guidedtour-widget-highlighted-background-color) 80%,
+    var(--guidedtour-widget-highlighted-background-color) 85%,
+    var(--guidedtour-widget-background-color) 90%
   );
   background-size: 200% 100%;
   animation: loading-shimmer 4s linear infinite;
@@ -132,17 +132,19 @@ async function onStartTask() {
   }
 }
 .guidedtour-task:hover {
-  background: var(--guidedtour-background-color-secondary) 100%;
+  background: var(--guidedtour-widget-highlighted-background-color) 100%;
 }
 
 .guidedtour-task.task-DONE {
   text-decoration: line-through;
-  color: var(
-    --guidedtour-text-color
-  ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
+  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
+  opacity: 0.7;
+  /* color: var(--guidedtour-widget-text-color-muted); */
 }
 
 .guidedtour-task.task-SKIPPED {
-  color: var(--guidedtour-text-color);
+  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
+  opacity: 0.7;
+  /* color: var(--guidedtour-widget-text-color-muted); */
 }
 </style>

@@ -41,12 +41,16 @@ const progress = props.progress;
 </script>
 
 <style scoped>
+.guidedtour-widget {
+  color: var(--guidedtour-widget-text-color);
+}
+
 .guidedtour-widget .completeness {
   margin: 16px 0 16px 0;
   height: 9px;
   position: relative;
   width: 100%;
-  background: var(--guidedtour-background-color-secondary);
+  background: var(--guidedtour-widget-highlighted-background-color);
   border-start-start-radius: 18px;
   border-start-end-radius: 18px;
   border-end-start-radius: 18px;
@@ -73,7 +77,7 @@ const progress = props.progress;
   left: 0px;
   top: 0px;
   height: 9px;
-  background: #7698ffff;
+  background: var(--guidedtour-widget-progress-bar-color);
   transition: width 0.15s ease-out;
 }
 </style>

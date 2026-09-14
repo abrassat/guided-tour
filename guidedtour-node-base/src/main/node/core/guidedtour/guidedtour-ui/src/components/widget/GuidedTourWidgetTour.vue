@@ -147,16 +147,18 @@ onMounted(async () => {
   .guidedtour-widget-item-title
   .tour-title {
   text-decoration: line-through;
-  color: var(
-    --guidedtour-text-color
-  ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
+  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
+  opacity: 0.7;
+  /* color: var(--guidedtour-widget-text-color-muted); */
 }
 
 .guidedtour-tour.tour-SKIPPED
   .guidedtour-tour-header
   .guidedtour-widget-item-title
   .tour-title {
-  color: var(--guidedtour-text-color);
+  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
+  opacity: 0.7;
+  /* color: var(--guidedtour-widget-text-color-muted); */
 }
 
 .guidedtour-content {
@@ -192,7 +194,7 @@ onMounted(async () => {
 }
 
 .guidedtour-tour-header:hover {
-  background: var(--guidedtour-background-color-secondary) 100%;
+  background: var(--guidedtour-widget-highlighted-background-color) 100%;
 }
 
 .guidedtour-tour-header {
