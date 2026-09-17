@@ -36,7 +36,7 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{velocity ouptput="false"}}
+  <content>{{velocity output='false'}}
 #set ($discard = $xwiki.ssx.use('GuidedTour.Code.TaskClassSheet'))
 #set ($discard = $xwiki.jsx.use('GuidedTour.Code.TaskClassSheet'))
 #set ($isEdit = ($xcontext.action == 'edit'))
@@ -59,9 +59,14 @@
 #*
  * Show all properties of a step.
 *#
-#macro (displayStepForm $step, $extraCssClasses)
+#macro (displayStepForm $step)
   #set ($xclass = $step.xWikiClass)
-  &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden $escapetool.xml($!extraCssClasses)'&gt;
+  #if ($isEdit)
+    #set ($viewMode = 'edit')
+  #else
+    #set ($viewMode = 'view')
+  #end
+  &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden'&gt;
     #foreach ($property in $xclass.properties)
       #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
       #if ($property.name == 'order')
@@ -70,7 +75,7 @@
 
         $doc.display($property.name, 'hidden', $step)
 
-        {{html clean="false"}}
+        {{html clean='false'}}
       #else
         &lt;dt&gt;
           &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
@@ -81,11 +86,7 @@
           ## Add an unique id to each element content, so `getStepTitle()` from js can compute the title in view mode.
           &lt;span id="$!escapetool.xml($propertyId)"&gt;
         #end
-        {{/html}}
-
-        $doc.display($property.name, $step)
-
-        {{html clean="false"}}
+        {{/html}}$doc.display($property.name, $viewMode, $step){{html clean='false'}}
         #if ($property.name == 'content' &amp;&amp; !$isEdit)
           &lt;/span&gt;
         #end
@@ -97,10 +98,21 @@
 {{/velocity}}
 
 {{velocity}}
-{{html clean="false"}}
+{{html clean='false'}}
+#if ($xcontext.action == 'get')
+  ## Only render the form of the step with index objectIndex.
+  #set ($reqNewObjectNumber = $numbertool.toNumber($request.objectIndex))
+  #if ($reqNewObjectNumber)
+    #set ($isEdit = true)
+    #set ($step = $doc.newObject('XWiki.GuidedTour.StepClass'))
+    #set ($discard = $step.getXWikiObject().setNumber($reqNewObjectNumber))
+    #displayStepForm($step)
+  #end
+  #stop
+#end
 ## Input needed to be able to add/remove objects through the form.
 &lt;input type="hidden" name="objectPolicy" value="updateOrCreate" /&gt;
-&lt;div class="taskSpecificProps"&gt;
+&lt;div class="taskSpecificProps xform"&gt;
   &lt;dl id="guidedtour-task-props"&gt;
     #set ($xclass = $task.xWikiClass)
     ## TODO: Make this hidden if no steps exist.
@@ -115,12 +127,15 @@
 
         $doc.display($property.name, $task)
 
-        {{html clean="false"}}
+        {{html clean='false'}}
       &lt;/dd&gt;
     #end
   &lt;/dl&gt;
 &lt;/div&gt;
 
+{{/html}}
+
+{{html wiki='true' clean='false'}}
 == {{translation key='guidedtour.tasks.sheet.title.steps'/}} ==
 
 #if ($isEdit)
@@ -132,9 +147,6 @@
 &lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape(
       $jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
     &lt;div class="sidebar"&gt;
-      &lt;h2 class="sidebar-title"&gt;
-        {{translation key='guidedtour.tasks.sheet.title.steps'/}}
-      &lt;/h2&gt;
       &lt;ul class="item-list"&gt;
         ## This template will be used in javascript to populate the sidebar item list.
         &lt;template id="step-item-template"&gt;
@@ -152,13 +164,13 @@
       &lt;/ul&gt;
     &lt;/div&gt;
 
-    &lt;div class="content"&gt;
+    &lt;div class="content xform"&gt;
       &lt;h2 class="content-title"&gt;
         {{translation key='guidedtour.tasks.sheet.title.properties'/}}
       &lt;/h2&gt;
       #foreach ($step in $steps)
         #set ($step = $step.get('stepObject'))
-        #displayStepForm($step, '')
+        #displayStepForm($step)
       #end
     &lt;/div&gt;
 &lt;/div&gt;
@@ -410,7 +422,7 @@
    * @param objectIndex the object index of the newly added step (not to be confused with the step order)
    */
   async function createStepForm(objectIndex) {
-    const url = new XWiki.Document(new XWiki.DocumentReference(XWiki.currentWiki, ['GuidedTour', 'Code'], 'StepSheet')).getURL() + '?' + $.param({
+    const url = XWiki.currentDocument.getURL('get') + '?' + $.param({
       'document': XWiki.currentDocument.getDocumentReference().toString(),
       'objectIndex': objectIndex,
       'xpage': 'plain',
