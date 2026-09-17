@@ -263,7 +263,16 @@
       <cache>forbid</cache>
     </property>
     <property type="LargeString">
-      <code>require(['jquery', 'xwiki-meta', 'xwiki-ckeditor', 'jquery-ui'], function ($, xm, ckePromise) {
+      <code>define('guidedtour-task-sheet', {
+  prefix: 'guidedtour.tasks.sheet.step.',
+  keys: [
+    'notification.done',
+    'notification.inProgress',
+    'title.generic',
+  ]
+});
+
+require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'], function ($, xm, l10n) {
   class GuidedTourStepSheetManager {
     stepElements = {};
     // List of initial steps on the page, so we can compute a diff when the user saves.
@@ -427,8 +436,7 @@
       'objectIndex': objectIndex,
       'xpage': 'plain',
     });
-    // TODO: Add translations.
-    const notification = new XWiki.widgets.Notification('Creating step...', 'inprogress');
+    const notification = new XWiki.widgets.Notification(l10n['notification.inProgress'], 'inprogress');
     const text = await fetch(url).then(response =&gt; response.text());
     // const newElement = new DOMParser().parseFromString(text);
     // FIXME: This isn't quite right. I should first parse the text, and then get what I need.
@@ -439,8 +447,7 @@
       elements: [form],
     });
 
-    // TODO: Add translations.
-    notification.replace(new XWiki.widgets.Notification('Done', 'done'));
+    notification.replace(new XWiki.widgets.Notification(l10n['notification.done'], 'done'));
     return form;
   };
 
@@ -467,7 +474,7 @@
       return descriptionField.textContent.trim();
     } else {
       const stepOrderIndex = 1 + Array.from(formContainer.querySelectorAll('.itemDisplay')).indexOf(form);
-      return `Step #${stepOrderIndex}`;
+      return l10n.get('title.generic', stepOrderIndex);
     }
   }
 

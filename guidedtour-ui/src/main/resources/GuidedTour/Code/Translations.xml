@@ -92,9 +92,11 @@ guidedtour.tours.sheet.tasks.header=Tasks
 guidedtour.tours.sheet.tasks.button.add=Add task
 guidedtour.tasks.sheet.title.properties=Properties
 guidedtour.tasks.sheet.title.steps=Steps
-guidedtour.tasks.sheet.steps.count=Step #{0}
 guidedtour.tasks.sheet.steps.delete=Delete
 guidedtour.tasks.sheet.steps.button.add=Add step
+guidedtour.tasks.sheet.step.notification.inProgress=Creating step...
+guidedtour.tasks.sheet.step.notification.done=Done
+guidedtour.tasks.sheet.step.title.generic=Step #{0}
 
 ## Modals
 
