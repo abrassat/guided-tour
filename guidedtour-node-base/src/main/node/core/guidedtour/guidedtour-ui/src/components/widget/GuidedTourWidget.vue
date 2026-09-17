@@ -205,8 +205,8 @@ const progress = {
   position: fixed;
   bottom: 0px;
   right: 0px;
-  box-shadow: 0px 0px 12px 0px var(--text-color);
-  background-color: var(--guidedtour-widget-background-color);
+  box-shadow: 0px 0px 12px 0px #00000033;
+  background-color: white;
   width: fit-content;
   overflow: hidden;
   display: inline-block;

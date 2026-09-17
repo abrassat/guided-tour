@@ -142,23 +142,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.guidedtour-tour.tour-DONE
-  .guidedtour-tour-header
-  .guidedtour-widget-item-title
-  .tour-title {
+.guidedtour-tour.tour-DONE .guidedtour-tour-header .tour-title {
   text-decoration: line-through;
-  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
-  opacity: 0.7;
-  /* color: var(--guidedtour-widget-text-color-muted); */
+  color: var(
+    --guidedtour-text-color
+  ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
 
-.guidedtour-tour.tour-SKIPPED
-  .guidedtour-tour-header
-  .guidedtour-widget-item-title
-  .tour-title {
-  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
-  opacity: 0.7;
-  /* color: var(--guidedtour-widget-text-color-muted); */
+.guidedtour-tour.tour-SKIPPED .guidedtour-tour-header .tour-title {
+  color: var(--guidedtour-text-color);
 }
 
 .guidedtour-content {
@@ -169,6 +161,7 @@ onMounted(async () => {
   overflow: hidden;
 }
 
+/* FIXME: guidedtour-content should be renamed to -collapsible or something. */
 .collapsed .guidedtour-content {
   max-height: 0;
 }
@@ -193,7 +186,7 @@ onMounted(async () => {
 }
 
 .guidedtour-tour-header:hover {
-  background: var(--guidedtour-widget-highlighted-background-color) 100%;
+  background: var(--guidedtour-background-color-secondary) 100%;
 }
 
 .guidedtour-tour-header {

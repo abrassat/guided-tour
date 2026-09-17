@@ -46,7 +46,7 @@ const progress = props.progress;
   height: 9px;
   position: relative;
   width: 100%;
-  background: var(--guidedtour-widget-highlighted-background-color);
+  background: var(--guidedtour-background-color-secondary);
   border-start-start-radius: 18px;
   border-start-end-radius: 18px;
   border-end-start-radius: 18px;
@@ -73,7 +73,7 @@ const progress = props.progress;
   left: 0px;
   top: 0px;
   height: 9px;
-  background: var(--guidedtour-widget-progress-bar-bg);
+  background: #7698ffff;
   transition: width 0.15s ease-out;
 }
 </style>

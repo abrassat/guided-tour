@@ -107,19 +107,17 @@ async function onStartTask() {
 
 <style scoped>
 .guidedtour-task:hover {
-  background: var(--guidedtour-widget-highlighted-background-color) 100%;
+  background: var(--guidedtour-background-color-secondary) 100%;
 }
 
 .guidedtour-task.task-DONE {
   text-decoration: line-through;
-  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
-  opacity: 0.7;
-  /* color: var(--guidedtour-widget-text-color-muted); */
+  color: var(
+    --guidedtour-text-color
+  ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
 
 .guidedtour-task.task-SKIPPED {
-  /* Workaround for when the muted color isn't sufficiently different from the regular text color. */
-  opacity: 0.7;
-  /* color: var(--guidedtour-widget-text-color-muted); */
+  color: var(--guidedtour-text-color);
 }
 </style>
