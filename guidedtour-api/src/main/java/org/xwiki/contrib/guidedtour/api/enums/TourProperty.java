@@ -22,8 +22,8 @@ package org.xwiki.contrib.guidedtour.api.enums;
 import org.xwiki.stability.Unstable;
 
 /**
- * Enum representing the properties of a Tour. Each enum constant has a base key and an optional suffix to form the
- * complete key used in the solr query for the XWiki Object.
+ * Enum representing the properties of a Tour. Each enum constant holds the base key, which is the property name used to
+ * access the value in the XWiki object.
  *
  * @version $Id$
  * @since 1.0
@@ -32,118 +32,81 @@ import org.xwiki.stability.Unstable;
 public enum TourProperty
 {
     /**
-     * The title key as a base key and string suffix representing the field type.
+     * The title key.
      */
-    TITLE("title", String.class.getSimpleName().toLowerCase()),
+    TITLE("title"),
+
     /**
-     * The isActive key as a base key and boolean suffix representing the field type. When installing Tour pages from
-     * page exports, the boolean fields are indexed as int, so two properties are needed for the bool fields.
+     * The isActive key.
      */
-    IS_ACTIVE_INT(TourProperty.IS_ACTIVE_PROP_NAME, "int"),
+    IS_ACTIVE("isActive"),
     /**
-     * The isActive key as a base key and boolean suffix representing the field type. When installing Tour pages from
-     * page exports, the boolean fields are indexed as int, so two properties are needed for the bool fields.
+     * The dependsOn key. It represents the dependencies of a task on other tasks.
      */
-    IS_ACTIVE_BOOL(TourProperty.IS_ACTIVE_PROP_NAME, "boolean"),
+    DEPENDS_ON("dependsOn"),
     /**
-     * The dependsOn key as a base key and string suffix representing the field type. It represents the dependencies of
-     * a task on other tasks.
+     * The order key.
      */
-    DEPENDS_ON("dependsOn", String.class.getSimpleName().toLowerCase()),
+    ORDER("order"),
     /**
-     * The order key as a base key and long suffix representing the field type.
+     * The element key, representing the CSS selector of the element targeted by the step.
      */
-    ORDER("order", Long.class.getSimpleName().toLowerCase()),
+    ELEMENT("element"),
     /**
-     * The element key as a base key without suffix, representing the CSS selector of the element targeted by the step.
+     * The content key, representing the content to be displayed in the step.
      */
-    ELEMENT("element", null),
+    CONTENT("content"),
     /**
-     * The content key as a base key without suffix, representing the content to be displayed in the step.
+     * The placement key, representing the placement of the step in relation to the target.
      */
-    CONTENT("content", null),
+    PLACEMENT("placement"),
     /**
-     * The placement key as a base key without suffix, representing the placement of the step in relation to the
-     * target.
+     * The backdrop key, representing whether a backdrop should be displayed behind the step.
      */
-    PLACEMENT("placement", null),
+    BACKDROP("backdrop"),
     /**
-     * The backdrop key as a base key without suffix, representing whether a backdrop should be displayed behind the
-     * step.
+     * The reflex key, representing whether the task should progress when interacting with the target element.
      */
-    BACKDROP("backdrop", null),
+    REFLEX("reflex"),
     /**
-     * The reflex key as a base key without suffix, representing whether the task should progress when interacting with
-     * the target element.
+     * The targetPage key, representing the page to navigate to when the step is reached.
      */
-    REFLEX("reflex", null),
+    TARGET_PAGE("targetPage"),
     /**
-     * The targetPage key as a base key without suffix, representing the page to navigate to when the step is reached.
+     * The targetAction key, representing the action to perform on the target page when the step is reached.
      */
-    TARGET_PAGE("targetPage", null),
+    TARGET_ACTION("targetAction"),
     /**
-     * The targetAction key as a base key without suffix, representing the action to perform on the target page when the
-     * step is reached.
+     * The queryParameters key, representing the query parameters to append to the URL when navigating to the target
+     * page.
      */
-    TARGET_ACTION("targetAction", null),
+    QUERY_PARAMETERS("queryParameters"),
     /**
-     * The queryParameters key as a base key without suffix, representing the query parameters to append to the URL when
-     * navigating to the target page.
-     */
-    QUERY_PARAMETERS("queryParameters", null),
-    /**
-     * The description key as a base key and sortString suffix representing the field type.
+     * The description key.
+     *
      * @since 0.2
      */
-    DESCRIPTION("description", "sortString");
-
-    private static final String IS_ACTIVE_PROP_NAME = "isActive";
+    DESCRIPTION("description");
 
     private final String baseKey;
-
-    private final String suffix;
 
     /**
      * Constructor for TourProperty.
      *
      * @param baseKey the base key of the property
-     * @param suffix the suffix to form the complete key, or null if no suffix is needed
      */
-    TourProperty(String baseKey, String suffix)
+    TourProperty(String baseKey)
     {
         this.baseKey = baseKey;
-        this.suffix = suffix;
     }
 
     /**
-     * Returns the base key of the property, without the suffix.
+     * Returns the base key of the property, which is the property name used to access the value in the XWiki object.
      *
      * @return the base key of the property
      */
     public String getBaseKey()
     {
         return this.baseKey;
-    }
-
-    /**
-     * If a suffix is defined, it appends it to the base key with an underscore.
-     *
-     * @return the base key and suffix concatenated with an underscore if the suffix is not null, otherwise just the
-     *     base key
-     */
-    public String getObjectKey()
-    {
-        return (this.suffix == null) ? this.baseKey : this.baseKey + "_" + this.suffix;
-    }
-
-    /**
-     * Formats the value from {@link #getObjectKey()} and a given prefix.
-     *
-     * @param stringFormat the string format to use, which should include a placeholder for the object key
-     * @return the formatted key with the given format and the object key
-     */
-    public String formKey(String stringFormat)
-    {
-        return String.format(stringFormat, getObjectKey());
     }
 }

@@ -121,20 +121,28 @@
   &lt;/dl&gt;
 &lt;/div&gt;
 
+== {{translation key='guidedtour.tasks.sheet.title.steps'/}} ==
+
 #if ($isEdit)
-  &lt;button id='add-step-btn' type='button' class="btn btn-primary"&gt;Add Step&lt;/button&gt;
+  &lt;button id='add-step-btn' class="btn btn-primary"&gt;
+    {{translation key='guidedtour.tasks.sheet.steps.button.add'/}}
+  &lt;/button&gt;
 #end
 
-&lt;div class="stepsListContainer"&gt;
+&lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape($jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
     &lt;div class="sidebar"&gt;
-      &lt;h4 class="sidebar-title"&gt;Steps&lt;/h4&gt;
+      &lt;h2 class="sidebar-title"&gt;Steps&lt;/h2&gt;
       &lt;ul class="item-list"&gt;
         ## This template will be used in javascript to populate the sidebar item list.
         &lt;template id="step-item-template"&gt;
           &lt;li class="item"&gt;
-            &lt;span class="step-item-title"&gt;&lt;/span&gt;
+            &lt;span class="step-item-title"&gt;
+              {{translation key='guidedtour.tasks.sheet.steps.count' parameters="$step.getValue('order')"/}}
+            &lt;/span&gt;
             #if ($isEdit)
-              &lt;button type="button" class="btn btn-default btn-xs step-item-delete"&gt;Delete&lt;/button&gt;
+              &lt;button type="button" class="btn btn-default btn-xs step-item-delete"&gt;
+                {{translation key='guidedtour.tasks.sheet.steps.delete' parameters="$step.getValue('order')"/}}
+              &lt;/button&gt;
             #end
           &lt;/li&gt;
         &lt;/template&gt;
@@ -142,7 +150,9 @@
     &lt;/div&gt;
 
     &lt;div class="content"&gt;
-      &lt;h2 class="content-title"&gt;Step Properties&lt;/h2&gt;
+      &lt;h2 class="content-title"&gt;
+        {{translation key='guidedtour.tasks.sheet.title.properties'/}}
+      &lt;/h2&gt;
       #foreach ($step in $steps)
         #set ($step = $step.get('stepObject'))
         #displayStepForm($step, '')
