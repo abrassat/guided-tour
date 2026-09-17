@@ -94,9 +94,10 @@ export class DefaultStepManagerApi implements StepManagerApi {
     taskId: string,
   ): Promise<TourStep[]> {
     const tourIndex = this.sharedStore.cache.toursMap.get(tourId);
-    const tour = tourIndex !== undefined
-      ? this.sharedStore.cache.tours[tourIndex]
-      : undefined;
+    const tour =
+      tourIndex !== undefined
+        ? this.sharedStore.cache.tours[tourIndex]
+        : undefined;
     const task = tour?.tasksList?.find((t) => t.id === taskId);
 
     const needsFetch = !tour || !task || !task.steps || task.steps.length === 0;

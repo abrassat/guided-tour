@@ -106,31 +106,6 @@ async function onStartTask() {
 </script>
 
 <style scoped>
-.guidedtour-task.loading-content {
-  background: linear-gradient(
-    to left,
-    var(--guidedtour-widget-background-color) 0%,
-    var(--guidedtour-widget-background-color) 25%,
-    var(--guidedtour-widget-highlighted-background-color) 30%,
-    var(--guidedtour-widget-highlighted-background-color) 35%,
-    var(--guidedtour-widget-background-color) 40%,
-    var(--guidedtour-widget-background-color) 75%,
-    var(--guidedtour-widget-highlighted-background-color) 80%,
-    var(--guidedtour-widget-highlighted-background-color) 85%,
-    var(--guidedtour-widget-background-color) 90%
-  );
-  background-size: 200% 100%;
-  animation: loading-shimmer 4s linear infinite;
-}
-
-@keyframes loading-shimmer {
-  from {
-    background-position: 200% 0;
-  }
-  to {
-    background-position: -200% 0;
-  }
-}
 .guidedtour-task:hover {
   background: var(--guidedtour-widget-highlighted-background-color) 100%;
 }

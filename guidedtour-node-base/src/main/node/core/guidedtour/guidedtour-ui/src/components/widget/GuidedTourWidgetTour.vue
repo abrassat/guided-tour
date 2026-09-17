@@ -169,7 +169,6 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-/* FIXME: guidedtour-content should be renamed to -collapsible or something. */
 .collapsed .guidedtour-content {
   max-height: 0;
 }
