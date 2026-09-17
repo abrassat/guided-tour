@@ -41,28 +41,28 @@
  * Show all properties of a step.
 *#
 #macro (displayStepForm $step)
-  #set($xclass = $step.xWikiClass)
+  #set ($xclass = $step.xWikiClass)
   &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden'&gt;
-    #foreach($property in $xclass.properties)
+    #foreach ($property in $xclass.properties)
       #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
       #if ($property.name == 'order')
-{{/html}}
+        {{/html}}
 
-$doc.display($property.name, 'hidden', $step)
+        $doc.display($property.name, 'hidden', $step)
 
-{{html clean="false"}}
+        {{html clean="false"}}
       #else
         &lt;dt&gt;
           &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
           &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
         &lt;/dt&gt;
         &lt;dd&gt;
-{{/html}}
-## The StepSheet page is only used in the edit mode.
+          {{/html}}
+          ## The StepSheet page is only used in the edit mode.
 
-$doc.display($property.name, 'edit', $step)
+          $doc.display($property.name, 'edit', $step)
 
-{{html clean="false"}}
+          {{html clean="false"}}
         &lt;/dd&gt;
       #end
 
@@ -86,7 +86,7 @@ $doc.display($property.name, 'edit', $step)
 #else
   #set ($steps = $reqDoc.getObjects('XWiki.GuidedTour.StepClass'))
   #set ($task = $reqDoc.getObject('XWiki.GuidedTour.TaskClass'))
-  #set($xclass = $task.xWikiClass)
+  #set ($xclass = $task.xWikiClass)
   ## TODO: Make this hidden if no steps exist.
   #set ($steps = $reqDoc.getObjects('XWiki.GuidedTour.StepClass'))
   #foreach ($step in $steps)

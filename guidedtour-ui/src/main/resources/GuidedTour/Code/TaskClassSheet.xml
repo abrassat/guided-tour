@@ -43,7 +43,6 @@
 
 #set ($steps = $doc.getObjects('XWiki.GuidedTour.StepClass'))
 #set ($task = $doc.getObject('XWiki.GuidedTour.TaskClass'))
-##set ($tour = $doc.parent.getObject('XWiki.GuidedTour.TourClass'))
 #set ($serializedSteps = [])
 #foreach ($step in $steps)
   #set ($order = $step.getValue('order'))
@@ -61,16 +60,17 @@
  * Show all properties of a step.
 *#
 #macro (displayStepForm $step, $extraCssClasses)
-  #set($xclass = $step.xWikiClass)
+  #set ($xclass = $step.xWikiClass)
   &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden $escapetool.xml($!extraCssClasses)'&gt;
-    #foreach($property in $xclass.properties)
+    #foreach ($property in $xclass.properties)
       #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
       #if ($property.name == 'order')
-{{/html}}
+        ## The order is automatically computed, so don't display it in the UI.
+        {{/html}}
 
-$doc.display($property.name, 'hidden', $step)
+        $doc.display($property.name, 'hidden', $step)
 
-{{html clean="false"}}
+        {{html clean="false"}}
       #else
         &lt;dt&gt;
           &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
@@ -78,14 +78,14 @@ $doc.display($property.name, 'hidden', $step)
         &lt;/dt&gt;
         &lt;dd&gt;
         #if ($property.name == 'content' &amp;&amp; !$isEdit)
-          ## Add a css id to this element, so the javascript code can find it in view mode.
+          ## Add an unique id to each element content, so `getStepTitle()` from js can compute the title in view mode.
           &lt;span id="$!escapetool.xml($propertyId)"&gt;
         #end
-{{/html}}
+        {{/html}}
 
-$doc.display($property.name, $step)
+        $doc.display($property.name, $step)
 
-{{html clean="false"}}
+        {{html clean="false"}}
         #if ($property.name == 'content' &amp;&amp; !$isEdit)
           &lt;/span&gt;
         #end
@@ -101,24 +101,24 @@ $doc.display($property.name, $step)
 ## Input needed to be able to add/remove objects through the form.
 &lt;input type="hidden" name="objectPolicy" value="updateOrCreate" /&gt;
 &lt;div class="taskSpecificProps"&gt;
-&lt;dl id="guidedtour-task-props"&gt;
-#set($xclass = $task.xWikiClass)
-## TODO: Make this hidden if no steps exist.
-#foreach($property in $xclass.properties)
-  #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
-  &lt;dt&gt;
-    &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
-    &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
-  &lt;/dt&gt;
-  &lt;dd&gt;
-{{/html}}
+  &lt;dl id="guidedtour-task-props"&gt;
+    #set ($xclass = $task.xWikiClass)
+    ## TODO: Make this hidden if no steps exist.
+    #foreach ($property in $xclass.properties)
+      #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
+      &lt;dt&gt;
+        &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
+        &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
+      &lt;/dt&gt;
+      &lt;dd&gt;
+        {{/html}}
 
-$doc.display($property.name, $task)
+        $doc.display($property.name, $task)
 
-{{html clean="false"}}
-  &lt;/dd&gt;
-#end
-&lt;/dl&gt;
+        {{html clean="false"}}
+      &lt;/dd&gt;
+    #end
+  &lt;/dl&gt;
 &lt;/div&gt;
 
 #if ($isEdit)
@@ -143,7 +143,6 @@ $doc.display($property.name, $task)
 
     &lt;div class="content"&gt;
       &lt;h2 class="content-title"&gt;Step Properties&lt;/h2&gt;
-      ##&lt;iframe src="/xwiki/bin/view/GuidedTour/Code/StepSheet?document=GuidedTour.Tours.GettingStarted.Panel%20Tour&amp;xpage=plain&amp;htmlHeaderAndFooter=false&amp;outputTitle=false"/&gt;
       #foreach ($step in $steps)
         #set ($step = $step.get('stepObject'))
         #displayStepForm($step, '')
@@ -244,7 +243,6 @@ $doc.display($property.name, $task)
     stepElements = {};
     // List of initial steps on the page, so we can compute a diff when the user saves.
     initialStepObjects = [];
-    // FIXME: Test what happens if I have steps [1,2,3], delete 2, and add a new step. New step == 2 or == 4 ?
     registerStep(objectIndex, form, sidebarItem) {
       this.stepElements[objectIndex] = {
         number: objectIndex,
@@ -487,7 +485,7 @@ $doc.display($property.name, $task)
     return nextNumber;
   }
 
-  // Start work.
+  // Start building the steps UI.
 
   $(document).on('xwiki:actions:beforeSave', () =&gt; {
     stepManager.updateHiddenInputs();
