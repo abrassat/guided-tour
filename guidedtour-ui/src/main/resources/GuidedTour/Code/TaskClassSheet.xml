@@ -129,9 +129,12 @@
   &lt;/button&gt;
 #end
 
-&lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape($jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
+&lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape(
+      $jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
     &lt;div class="sidebar"&gt;
-      &lt;h2 class="sidebar-title"&gt;Steps&lt;/h2&gt;
+      &lt;h2 class="sidebar-title"&gt;
+        {{translation key='guidedtour.tasks.sheet.title.steps'/}}
+      &lt;/h2&gt;
       &lt;ul class="item-list"&gt;
         ## This template will be used in javascript to populate the sidebar item list.
         &lt;template id="step-item-template"&gt;
