@@ -300,7 +300,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
         this.registerStep(objectIndex, form, createStepEntry(objectIndex, form));
       });
       // Store element data, for later diffing.
-      this.initialStepObjects = getStepIds();
+      this.initialStepObjects = getStepObjectNumbers();
       // Show first step.
       if (this.initialStepObjects.length &gt; 0) {
         this.showStep(this.initialStepObjects[0]);
@@ -350,7 +350,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       // Update the ObjectPolicy fields.
       this.formContainer.querySelectorAll('input[data-guidedtour-managed="true"]').forEach((input) =&gt; input.remove());
 
-      const currentStepObjects = getStepIds();
+      const currentStepObjects = getStepObjectNumbers();
       const initialSet = new Set(this.initialStepObjects);
       const currentSet = new Set(currentStepObjects);
       const addedObjects = currentSet.difference(initialSet);
@@ -360,7 +360,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'addedObjects';
-        input.value = `${xclassName}_${stepNumber}`;
+        input.value = `${stepXClassName}_${stepNumber}`;
         input.dataset.guidedtourManaged = 'true';
         this.formContainer.appendChild(input);
       });
@@ -369,13 +369,13 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'deletedObjects';
-        input.value = `${xclassName}_${stepNumber}`;
+        input.value = `${stepXClassName}_${stepNumber}`;
         input.dataset.guidedtourManaged = 'true';
         this.formContainer.appendChild(input);
       });
     }
     reset() {
-      this.initialStepObjects = getStepIds();
+      this.initialStepObjects = getStepObjectNumbers();
     }
     showStep(objectId) {
       const selectedStep = this.stepElements[objectId];
@@ -391,7 +391,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
     }
   }
 
-  const xclassName = 'XWiki.GuidedTour.StepClass';
+  const stepXClassName = 'XWiki.GuidedTour.StepClass';
   const isEdit = xm.action === 'edit';
   const stepsListContainer = document.querySelector('.stepsListContainer');
   const sidebarContainer = stepsListContainer.querySelector('.sidebar .item-list');
@@ -405,7 +405,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
    * Get the object numbers of all steps currently present on the page.
    * @returns A list of object numbers
    */
-  function getStepIds() {
+  function getStepObjectNumbers() {
     return Array.from(sidebarContainer.querySelectorAll('.item')).map(item =&gt; Number(item.dataset.id));
   }
   /**
@@ -414,7 +414,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
    * @returns 
    */
   function getStepId(objectIndex) {
-    return `${xclassName}_${objectIndex}`;
+    return `${stepXClassName}_${objectIndex}`;
   }
 
   /**
@@ -423,7 +423,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
    * @returns 
    */
   function getObjectIndexFromId(stepId) {
-    return stepId.substring(xclassName.length + 1);
+    return stepId.substring(stepXClassName.length + 1);
   }
 
   /**
@@ -509,7 +509,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
    * @returns 
    */
   function getNextStepNumber() {
-    const usedNumbers = getStepIds();
+    const usedNumbers = getStepObjectNumbers();
     let nextNumber = 0;
     while (usedNumbers.includes(nextNumber)) {
       nextNumber++;
@@ -548,7 +548,6 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       cursor: "grabbing",
       update: function () {
         $(sidebarContainer).find('.item').each(function (i) {
-          // FIXME: Escape this for the jQuery css selector?
           const objectIndex = $(this).data('id');
           const form = stepManager.stepElements[objectIndex].form;
           $(form).find(`input[id="${getStepId(objectIndex)}_order"`).val(i);
