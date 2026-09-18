@@ -130,10 +130,7 @@ onMounted(() => {
   guidedTourManager
     .getTours()
     .then((tours) => {
-      // Replace the tour objects used by the API with reactive Proxies, so we can listen for status updates.
-      for (let i = 0; i < tours.length; i++) {
-        tours[i] = reactive(tours[i]);
-      }
+      // The returned tour objects should be reactive, so the changes can be reflected in the UI.
       state.tours = tours;
       // initExistingTask() requires the cache to be already fetched by getTours().
       guidedTourManager.initExistingTask();

@@ -18,6 +18,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 import { StorageManager } from "../StorageManager";
+import { reactive } from "vue";
 import type {
   TourStep,
   TourTask,
@@ -70,8 +71,8 @@ export class TourStore {
   public updateTours(tours: TourTour[]) {
     this.populateTourTasks(tours);
     this.clearCache();
-    this._cache.tours.push(...tours);
     for (let i = 0; i < tours.length; i++) {
+      this._cache.tours.push(reactive(tours[i]));
       this._cache.toursMap.set(tours[i].id, i);
     }
   }
