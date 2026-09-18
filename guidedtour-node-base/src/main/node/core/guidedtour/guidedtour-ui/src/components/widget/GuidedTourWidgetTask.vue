@@ -29,7 +29,7 @@
     :loading="false"
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
-      ['task-' + status]: true,
+      ['task-' + task.status]: true,
       'guidedtour-task': true,
     }"
     :id="task.id"
@@ -62,7 +62,7 @@
 <script setup lang="ts">
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, inject, reactive, ref, toRefs } from "vue";
+import { inject, reactive, ref, toRefs } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
@@ -73,10 +73,6 @@ const { task, tourId } = defineProps<{
   task: Reactive<TourTask>;
   tourId: string;
 }>();
-
-const status = computed(() => {
-  return task.status;
-});
 
 const state = reactive({
   isWaitingAsync: false,

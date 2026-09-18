@@ -42,10 +42,7 @@
         :loading="false"
         :waiting="ref(false)"
         class="guidedtour-tour-header"
-        @click="
-          console.log('clicked', props.tour);
-          $emit('toggleCollapseTour', props.tour);
-        "
+        @click="$emit('toggleCollapseTour', props.tour)"
       >
         <template v-slot:pre-btns>
           <!-- This is just for show, it shouldn't do anything. -->

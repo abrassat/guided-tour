@@ -85,8 +85,8 @@ export class DefaultTourManagerApi implements TourManagerApi {
         // The tasks weren't fetched yet, so do nothing.
         continue;
       }
-      // Only consider active tasks what are shown in the UI.
-      const consideredTaskList = tour.tasksList!.filter(
+      // Only consider active tasks that are shown in the UI.
+      const consideredTaskList = tour.tasksList.filter(
         (task: TourTask) => task.active == true,
       );
       if (consideredTaskList.length == 0) {
