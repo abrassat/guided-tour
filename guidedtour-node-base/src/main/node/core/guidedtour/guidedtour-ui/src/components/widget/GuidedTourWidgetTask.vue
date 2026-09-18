@@ -126,6 +126,7 @@ async function onStartTask() {
     background-position: -200% 0;
   }
 }
+
 .guidedtour-task:hover {
   background: var(--guidedtour-background-color-secondary) 100%;
 }
