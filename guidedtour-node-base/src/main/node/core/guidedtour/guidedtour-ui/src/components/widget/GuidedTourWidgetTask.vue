@@ -118,6 +118,7 @@ async function onStartTask() {
   background-size: 200% 100%;
   animation: loading-shimmer 4s linear infinite;
 }
+
 @keyframes loading-shimmer {
   from {
     background-position: 200% 0;
@@ -126,7 +127,6 @@ async function onStartTask() {
     background-position: -200% 0;
   }
 }
-
 .guidedtour-task:hover {
   background: var(--guidedtour-background-color-secondary) 100%;
 }
