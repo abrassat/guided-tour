@@ -263,9 +263,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   }
 
   /**
-   * Check session storage for an in-progress task and resume it.
+   * Check session storage for an in-progress task and resume it. Shows a notification if an error was encountered.
    * Called on page load to recover tours that span multiple pages.
    */
+  // eslint-disable-next-line max-statements
   async initExistingTask() {
     // FIXME: This should be moved somewhere else, but idk where. `GuidedTourWidget.vue` ? idk
     const existingActiveTask = StorageManager.getStorageKey(
@@ -276,6 +277,11 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         StorageManager.parseStorageKeyPrefix(existingActiveTask);
       if (parsedIds === undefined) {
         console.error("No good task parsing value:", parsedIds);
+        // TODO: Add localization translation.
+        new XWiki.widgets.Notification(
+          "Could not continue cross-page task.",
+          "error",
+        );
       } else {
         // Populate the cache by fetching all tours first.
         await this.getTours();
@@ -290,6 +296,11 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
             "Tried to get task for ",
             parsedIds,
             ", it didn't work.",
+          );
+          // TODO: Add localization translation.
+          new XWiki.widgets.Notification(
+            "Could not continue cross-page task.",
+            "error",
           );
         }
       }
