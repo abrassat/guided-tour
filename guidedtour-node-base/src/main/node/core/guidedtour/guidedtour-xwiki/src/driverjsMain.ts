@@ -25,6 +25,23 @@ import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
 import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
 
 type StepDirection = "next" | "previous";
+
+/**
+ * Resolve the driver translations from the XWiki localization webjar.
+ *
+ * The webjar is only available at runtime in the XWiki environment, so it is loaded dynamically.
+ * @returns the resolved translations, keyed by the full translation key.
+ */
+async function getTranslations(): Promise<Record<string, string>> {
+  const webjarModule = "xwiki-platform-localization-webjar";
+  const { resolver } = await import(/* @vite-ignore */ webjarModule);
+  const { translations } = await resolver.resolve({
+    prefix: "guidedtour.driver.",
+    keys: ["next", "previous", "skipAll", "loading", "error"],
+  });
+  return translations;
+}
+
 const util = {
   /**
    * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
@@ -48,6 +65,7 @@ const util = {
   makeSkipAllButton(
     guidedTourManager: DefaultGuidedTourManager,
     guidedTourTask: TourTask,
+    translations: Record<string, string>,
   ): Element {
     const customSkipAll = document.createElement("a");
     customSkipAll.classList.add("driver-xwiki-skip-all-button");
@@ -57,7 +75,7 @@ const util = {
     }
 
     customSkipAll.onclick = onSkipAll;
-    customSkipAll.innerHTML = "Skip All"; // TODO: Add translation.
+    customSkipAll.textContent = translations["guidedtour.driver.skipAll"];
     return customSkipAll;
   },
   /**
@@ -138,6 +156,7 @@ const util = {
     step: TourStep,
     guidedTourManager: DefaultGuidedTourManager,
     guidedTourTask: TourTask,
+    translations: Record<string, string>,
   ) {
     if (step.reflex) {
       popDOM.footerButtons.removeChild(popDOM.nextButton);
@@ -148,7 +167,7 @@ const util = {
       popDOM.previousButton.classList.add("btn", "btn-sm"); // TODO: Make this an <a> instead of <button>
     }
     popDOM.footer.appendChild(
-      util.makeSkipAllButton(guidedTourManager, guidedTourTask),
+      util.makeSkipAllButton(guidedTourManager, guidedTourTask, translations),
     );
   },
   getAdjacentStep(
@@ -211,12 +230,13 @@ util.addPageUnloadingListener();
 function XWikiDriverConfig(
   guidedTourManager: DefaultGuidedTourManager,
   guidedTourTask: TourTask,
+  translations: Record<string, string>,
 ): Config {
   console.log("Setting up", guidedTourTask);
   // Old code calls this variable `tour`.
   return {
-    nextBtnText: "Next >", // TODO: Add translation.
-    prevBtnText: "< Previous", // TODO: Add translation.
+    nextBtnText: translations["guidedtour.driver.next"],
+    prevBtnText: translations["guidedtour.driver.previous"],
     showProgress: true,
     showButtons: ["previous", "next", "close"],
     overlayOpacity: 0.3,
@@ -228,6 +248,7 @@ function XWikiDriverConfig(
         guidedTourTask.steps![activeIndex],
         guidedTourManager,
         guidedTourTask,
+        translations,
       );
 
       popDOM.progress.style.display = "";
@@ -292,25 +313,31 @@ function convertToDriverStep(
   };
 }
 
-function getDriverConfigForSteps(
+async function getDriverConfigForSteps(
   guidedTourTask: TourTask,
   guidedTourManager: DefaultGuidedTourManager,
-) {
+): Promise<{ config: Config; translations: Record<string, string> }> {
   if (!guidedTourTask.steps) {
     console.error("Task has no steps:", guidedTourTask);
     throw "Task has no steps";
   }
   console.log(guidedTourTask.steps);
-  const config = XWikiDriverConfig(guidedTourManager, guidedTourTask);
+  const translations = await getTranslations();
+  const config = XWikiDriverConfig(
+    guidedTourManager,
+    guidedTourTask,
+    translations,
+  );
   config.steps = guidedTourTask.steps!.map((step) =>
     convertToDriverStep(step, guidedTourTask),
   );
-  return config;
+  return { config, translations };
 }
 
 function wrapTask(
   guidedTourTask: Driver,
   guidedTourManager: DefaultGuidedTourManager,
+  translations: Record<string, string>,
 ): Driver {
   function hasActiveStepIndexChanged(
     previousActiveStepIndex: number | undefined,
@@ -324,9 +351,8 @@ function wrapTask(
   const _drive = guidedTourTask.drive;
   // eslint-disable-next-line max-statements
   guidedTourTask.drive = async function (stepIndex: number = 0) {
-    // TODO: Add translation as part of GUIDEDTOUR-4.
     const loadingNotification = new XWiki.widgets.Notification(
-      "Loading task step...",
+      translations["guidedtour.driver.loading"],
       "inprogress",
     );
     const currentStepActiveIndex = guidedTourTask.getActiveIndex();
@@ -371,10 +397,9 @@ function wrapTask(
       }
       // We didn't find the element we wanted. Don't proceed with the task.
       console.error(e);
-      // TODO: Add translation as part of GUIDEDTOUR-4.
       loadingNotification.replace(
         new XWiki.widgets.Notification(
-          "Error while moving between task steps.",
+          translations["guidedtour.driver.error"],
           "error",
         ),
       );
