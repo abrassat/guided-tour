@@ -115,7 +115,6 @@
 &lt;div class="taskSpecificProps xform"&gt;
   &lt;dl id="guidedtour-task-props"&gt;
     #set ($xclass = $task.xWikiClass)
-    ## TODO: Make this hidden if no steps exist.
     #foreach ($property in $xclass.properties)
       #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
       &lt;dt&gt;
@@ -131,12 +130,19 @@
       &lt;/dd&gt;
     #end
   &lt;/dl&gt;
+{{/html}}
+
+{{translation key="guidedtour.tasks.sheet.steps.keyboardHints"/}}
+
+{{html clean="false"}}
+
 &lt;/div&gt;
 
 {{/html}}
 
-{{html wiki='true' clean='false'}}
 == {{translation key='guidedtour.tasks.sheet.title.steps'/}} ==
+
+{{html clean='false'}}
 
 #if ($isEdit)
   &lt;button id='add-step-btn' class="btn btn-primary"&gt;
@@ -386,6 +392,11 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
 
       Object.values(this.stepElements).forEach((currentStep) =&gt; {
         currentStep.sidebarItem.classList.toggle('active', currentStep.number === selectedStep.number);
+        if (currentStep.number === selectedStep.number) {
+          currentStep.sidebarItem.setAttribute('aria-current', 'step');
+        } else {
+          currentStep.sidebarItem.removeAttribute('aria-current');
+        }
         currentStep.form.classList.toggle('hidden', currentStep.number !== selectedStep.number);
       });
     }
@@ -518,6 +529,41 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
   }
 
   // Start building the steps UI.
+
+  // Bind keyboard-only navigation events.
+
+  sidebarContainer.addEventListener('keydown', (event) =&gt; {
+    const selectedItem = sidebarContainer.querySelector('.item.active');
+    const items = Array.from(sidebarContainer.querySelectorAll('.item'));
+    const index = items.indexOf(selectedItem);
+    if (isEdit &amp;&amp; event.altKey &amp;&amp; event.shiftKey) {
+      if (event.code === 'Delete') {
+        // Delete step (edit mode)
+        event.preventDefault();
+        stepManager.removeStep(Number(selectedItem.dataset.id));
+      } else if (event.code === 'KeyN') {
+        // Add new step (edit mode)
+        event.preventDefault();
+        stepManager.addStep();
+      } else if (['ArrowUp', 'ArrowDown'].includes(event.code)) {
+        // Move/reorder step (edit mode)
+        const sibling = items[index + (event.code === 'ArrowUp' ? -1 : 1)];
+        if (sibling) {
+          event.preventDefault();
+          sidebarContainer.insertBefore(selectedItem, event.code === 'ArrowUp' ? sibling : sibling.nextSibling);
+          selectedItem.focus();
+        }
+      }
+    } else if (['ArrowUp', 'ArrowDown'].includes(event.code)) {
+      // Navigate between steps (view and edit mode)
+      const nextItem = items[index + (event.code === 'ArrowUp' ? -1 : 1)];
+      if (nextItem) {
+        event.preventDefault();
+        nextItem.focus();
+        stepManager.showStep(Number(nextItem.dataset.id));
+      }
+    }
+  });
 
   $(document).on('xwiki:actions:beforeSave', () =&gt; {
     stepManager.updateHiddenInputs();
@@ -731,7 +777,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
   flex-shrink: 0;
 }
 
-.stepsListContainer .item:hover{
+.stepsListContainer .item:hover, .stepsListContainer .item.active {
   box-shadow: 0 0 5px 1px color-mix(in srgb,var(--accent) 50%,transparent);
 }
 
