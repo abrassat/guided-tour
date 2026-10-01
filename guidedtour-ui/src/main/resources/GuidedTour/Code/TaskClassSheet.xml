@@ -132,38 +132,34 @@
     #end
   &lt;/dl&gt;
   &lt;p id="steps-keyboard-hints" class="xHint"&gt;
-{{/html}}
-
-{{translation key="guidedtour.tasks.sheet.steps.keyboardHints#if ($isEdit).edit#end"/}}
-
-{{html clean="false"}}
+    $escapetool.xml($services.localization.render("guidedtour.tasks.sheet.steps.keyboardHints#if ($isEdit).edit#end"))
   &lt;/p&gt;
 &lt;/div&gt;
 {{/html}}
 
 == {{translation key='guidedtour.tasks.sheet.title.steps'/}} ==
 
-{{html wiki="true" clean='false'}}
+{{html clean='false'}}
 
 #if ($isEdit)
   &lt;button id='add-step-btn' class="btn btn-primary"&gt;
-    {{translation key='guidedtour.tasks.sheet.steps.button.add'/}}
+    $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add'))
   &lt;/button&gt;
 #end
 
 &lt;div class="stepsListContainer"&gt;
     &lt;div class="sidebar"&gt;
-      &lt;ul class="item-list" role="tablist" aria-orientation="vertical" tabindex="0"
-        aria-label="{{translation key='guidedtour.tasks.sheet.title.steps'/}}"
+      &lt;ul class="item-list" role="tablist" aria-orientation="vertical" tabindex="-1"
+        aria-label="$escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.steps'))"
         aria-describedby="steps-keyboard-hints"
         &gt;
         ## This template will be used in javascript to populate the sidebar item list.
         &lt;template id="step-item-template"&gt;
           &lt;li class="item" role="tab" tabindex="-1" aria-selected="false"&gt;
-            &lt;span class="step-item-title"&gt;&lt;/span&gt;
+            &lt;span class="step-item-title" aria-hidden="true"&gt;&lt;/span&gt;
             #if ($isEdit)
-              &lt;button type="button" class="btn btn-default btn-xs step-item-delete" tabindex="-1"&gt;
-                {{translation key='guidedtour.tasks.sheet.steps.delete' parameters="$step.getValue('order')"/}}
+              &lt;button type="button" class="btn btn-default btn-xs step-item-delete" tabindex="-1" aria-hidden="true"&gt;
+                $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.delete', [$step.getValue('order')]))
               &lt;/button&gt;
             #end
           &lt;/li&gt;
@@ -173,7 +169,7 @@
 
     &lt;div class="content xform"&gt;
       &lt;h2 class="content-title"&gt;
-        {{translation key='guidedtour.tasks.sheet.title.properties'/}}
+        $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.properties'))
       &lt;/h2&gt;
       #foreach ($step in $steps)
         #set ($step = $step.get('stepObject'))
@@ -281,6 +277,16 @@
 });
 
 require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'], function ($, xm, l10n) {
+  function updateItems() {
+    sidebarContainer.querySelectorAll('.item').forEach((sidebarItem, index) =&gt; {
+      sidebarItem.setAttribute('aria-label', l10n.get(
+        'title.sidebar.screenReaderDescription',
+        (index + 1).toString(),
+        sidebarItem.title
+      ));
+    });
+  }
+
   class GuidedTourStepSheetManager {
     stepElements = {};
     // List of initial steps on the page, so we can compute a diff when the user saves.
@@ -296,12 +302,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       }
       if (!this.sidebarContainer.contains(sidebarItem)) {
         this.sidebarContainer.appendChild(sidebarItem);
-        // Set the aria-label here, since we need to know how many steps are before this one.
-        sidebarItem.setAttribute('aria-label', l10n.get(
-          'title.sidebar.screenReaderDescription',
-          ($(sidebarItem).index('.item') + 1).toString(),
-          sidebarItem.title
-        ));
+        updateItems();
       }
     }
     constructor(formContainer, sidebarContainer) {
@@ -348,6 +349,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       currentStep.form.remove();
       currentStep.sidebarItem.remove();
       delete this.stepElements[objectIndex];
+      updateItems();
     }
 
     /**
@@ -402,6 +404,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
         const isSelected = currentStep.number === selectedStep.number;
         currentStep.sidebarItem.classList.toggle('active', isSelected);
         currentStep.sidebarItem.setAttribute('aria-selected', isSelected);
+        currentStep.sidebarItem.tabIndex = isSelected ? 0 : -1;
         currentStep.form.classList.toggle('hidden', currentStep.number !== selectedStep.number);
       });
     }
@@ -477,11 +480,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
     $(descriptionField).on('keyup change', () =&gt; {
       stepItem.querySelector(`.step-item-title`).textContent = getStepTitle(objectIndex, form);
       stepItem.title = getStepTitle(objectIndex, form);
-      stepItem.setAttribute('aria-label', l10n.get(
-        'title.sidebar.screenReaderDescription',
-        ($(stepItem).index('.item') + 1).toString(),
-        stepItem.title
-      ));
+      updateItems();
     });
   }
 
@@ -511,7 +510,10 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
     item.setAttribute('aria-controls', getStepId(objectIndex));
     item.querySelector('.step-item-title').textContent = getStepTitle(objectIndex, form);
     item.title = getStepTitle(objectIndex, form);
-    item.addEventListener('click', () =&gt; stepManager.showStep(objectIndex));
+    item.addEventListener('click', () =&gt; {
+      stepManager.showStep(objectIndex);
+      item.focus();
+    });
     item.addEventListener('keydown', (event) => {
       if (['Space', 'Enter'].includes(event.code)) {
         event.preventDefault();
@@ -551,31 +553,43 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
   // Bind keyboard-only navigation events.
 
   const refocusElement = function () {
-    sidebarContainer.focus();
+    (sidebarContainer.querySelector('.item.active') || sidebarContainer).focus();
   };
 
+  function getSelectedStepItem(event) {
+    return event.target.closest('.item') || sidebarContainer.querySelector('.item.active');
+  }
+
+  function maybeMoveStep(event, position) {
+    const stepItem = sidebarContainer.querySelector('.item[data-moving]') || getSelectedStepItem(event);
+    const sibling = position === 'before' ? stepItem?.previousElementSibling : stepItem?.nextElementSibling;
+    if (sibling?.classList.contains('item')) {
+      sidebarContainer.insertBefore(stepItem, position === 'before' ? sibling : sibling.nextSibling);
+      updateItems();
+      stepManager.showStep(Number(stepItem.dataset.id));
+      stepItem.focus();
+    }
+  }
+
   sidebarContainer.addEventListener('keydown', (event) =&gt; {
-    const selectedItem = sidebarContainer.querySelector('.item.active');
+    const selectedItem = getSelectedStepItem(event);
     const items = Array.from(sidebarContainer.querySelectorAll('.item'));
     const index = items.indexOf(selectedItem);
     if (isEdit &amp;&amp; event.altKey &amp;&amp; event.shiftKey) {
+      selectedItem?.setAttribute('data-moving', 'true');
       if (['Delete', 'KeyD'].includes(event.code)) {
         // Delete step (edit mode)
         event.preventDefault();
+        sidebarContainer.querySelectorAll('.item[data-moving]').forEach(item =&gt; item.removeAttribute('data-moving'));
         stepManager.removeStep(Number(selectedItem.dataset.id));
         refocusElement();
       } else if (['KeyA', 'KeyN'].includes(event.code)) {
         // Add new step (edit mode)
         event.preventDefault();
+        sidebarContainer.querySelectorAll('.item[data-moving]').forEach(item =&gt; item.removeAttribute('data-moving'));
         stepManager.addStep().then(() =&gt; refocusElement());
       } else if (['ArrowUp', 'ArrowDown'].includes(event.code)) {
-        // Move/reorder step (edit mode)
-        const sibling = items[index + (event.code === 'ArrowUp' ? -1 : 1)];
-        if (sibling) {
-          event.preventDefault();
-          sidebarContainer.insertBefore(selectedItem, event.code === 'ArrowUp' ? sibling : sibling.nextSibling);
-          refocusElement();
-        }
+        event.preventDefault();
       }
     } else if (['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.code)) {
       // Navigate between steps (view and edit mode)
@@ -587,6 +601,17 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
         stepManager.showStep(Number(nextItem.dataset.id));
         refocusElement();
       }
+    }
+  });
+
+  sidebarContainer.addEventListener('keyup', (event) =&gt; {
+    const movingItem = sidebarContainer.querySelector('.item[data-moving]');
+    if (!event.altKey || !event.shiftKey) {
+      movingItem?.removeAttribute('data-moving');
+    } else if (event.code === 'ArrowUp') {
+      maybeMoveStep(event, 'before');
+    } else if (event.code === 'ArrowDown') {
+      maybeMoveStep(event, 'after');
     }
   });
 
@@ -618,11 +643,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       items: '.item',
       cursor: "grabbing",
       update: function () {
-        $(sidebarContainer).find('.item').each(function (i) {
-          const objectIndex = $(this).data('id');
-          const form = stepManager.stepElements[objectIndex].form;
-          $(form).find(`input[id="${getStepId(objectIndex)}_order"`).val(i);
-        });
+        updateItems();
       }
     });
   }
@@ -784,6 +805,10 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
   text-overflow: ellipsis;
   overflow: hidden;
   text-wrap: nowrap;
+}
+
+.item[data-moving="true"] {
+  border: dashed var(--accent);
 }
 
 .stepsListContainer .item{
