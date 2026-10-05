@@ -56,10 +56,8 @@
 #end
 #set ($steps = $collectiontool.sort($serializedSteps, 'order'))
 
-#*
- * Show all properties of a step.
-*#
-#macro (displayStepForm $step)
+## Show all properties of a step.
+#macro (_displayStepForm $step)
   #set ($xclass = $step.xWikiClass)
   #if ($isEdit)
     #set ($viewMode = 'edit')
@@ -107,7 +105,7 @@
     #set ($isEdit = true)
     #set ($step = $doc.newObject('XWiki.GuidedTour.StepClass'))
     #set ($discard = $step.getXWikiObject().setNumber($reqNewObjectNumber))
-    #displayStepForm($step)
+    #_displayStepForm($step)
   #end
   #stop
 #end
@@ -173,7 +171,7 @@
       &lt;/h2&gt;
       #foreach ($step in $steps)
         #set ($step = $step.get('stepObject'))
-        #displayStepForm($step)
+        #_displayStepForm($step)
       #end
     &lt;/div&gt;
 &lt;/div&gt;
@@ -322,12 +320,19 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       }
     }
     async addStep(objectIndex) {
-      if (!objectIndex) {
-        objectIndex = getNextStepNumber();
+      const notification = new XWiki.widgets.Notification(l10n['notification.inProgress'], 'inprogress');
+      try {
+        if (!objectIndex) {
+          objectIndex = getNextStepNumber();
+        }
+        const formElement = await createStepForm(objectIndex);
+        this.registerStep(objectIndex, formElement, createStepEntry(objectIndex, formElement));
+        this.showStep(objectIndex);
+        notification.replace(new XWiki.widgets.Notification(l10n['notification.done'], 'done'));
+      } catch (e) {
+        console.error(e);
+        notification.replace(new XWiki.widgets.Notification(l10n['notification.error'], 'error'));
       }
-      const formElement = await createStepForm(objectIndex);
-      this.registerStep(objectIndex, formElement, createStepEntry(objectIndex, formElement));
-      this.showStep(objectIndex);
     };
     removeStep(objectIndex) {
       const currentStep = this.stepElements[objectIndex];
@@ -337,10 +342,12 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       }
 
       if (currentStep.sidebarItem.classList.contains('active')) {
-        if (currentStep.sidebarItem.previousElementSibling &amp;&amp; currentStep.sidebarItem.previousElementSibling.classList.contains('item')) {
+        if (currentStep.sidebarItem.previousElementSibling
+            &amp;&amp; currentStep.sidebarItem.previousElementSibling.classList.contains('item')) {
           // If deleting current step, show the previous step once this one is deleted.
           this.showStep(Number(currentStep.sidebarItem.previousElementSibling.dataset.id));
-        } else if (currentStep.sidebarItem.nextElementSibling &amp;&amp; currentStep.sidebarItem.nextElementSibling.classList.contains('item')) {
+        } else if (currentStep.sidebarItem.nextElementSibling
+            &amp;&amp; currentStep.sidebarItem.nextElementSibling.classList.contains('item')) {
           this.showStep(Number(currentStep.sidebarItem.nextElementSibling.dataset.id));
         }
       }
@@ -357,7 +364,8 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
      * XWiki save function.
      */
     updateHiddenInputs() {
-      // Update the order field for all steps, to ensure that the order that is displayed is also the one that is stored in the page.
+      // Update the order field for all steps, to ensure that the order that is displayed is also the one that is stored
+      // in the page.
       this.sidebarContainer.querySelectorAll('.item').forEach((childElement, index) =&gt; {
         const objectIndex = childElement.dataset.id;
         const orderInput = this.stepElements[objectIndex].form.querySelector(`[id="${getStepId(objectIndex)}_order"]`);
@@ -446,7 +454,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
   }
 
   /**
-   * Fetch the StepSheet and insert it into the Step Content.
+   * Fetch the Step form from the 'get' endpoint on this task page, and insert it into the Step Content.
    * @param objectIndex the object index of the newly added step (not to be confused with the step order)
    */
   async function createStepForm(objectIndex) {
@@ -455,7 +463,6 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       'objectIndex': objectIndex,
       'xpage': 'plain',
     });
-    const notification = new XWiki.widgets.Notification(l10n['notification.inProgress'], 'inprogress');
     const text = await fetch(url).then(response =&gt; response.text());
     // const newElement = new DOMParser().parseFromString(text);
     // FIXME: This isn't quite right. I should first parse the text, and then get what I need.
@@ -466,7 +473,6 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       elements: [form],
     });
 
-    notification.replace(new XWiki.widgets.Notification(l10n['notification.done'], 'done'));
     return form;
   };
 
