@@ -69,6 +69,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
     private readonly xm,
     sharedStore: TourStore,
+    private readonly translations: Record<string, string>,
   ) {
     this.sharedStore = sharedStore;
     const restClient = new GuidedTourRestClient();
@@ -239,7 +240,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
           ) ?? "0",
         )
       : 0;
-    const { config, translations } = await getDriverConfigForSteps(task, this);
+    const config = await getDriverConfigForSteps(task, this, this.translations);
     const driverTour = driver(config);
     StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
@@ -251,7 +252,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
 
     this.activeTask = task;
-    this.activeDriverTask = wrapTask(driverTour, this, translations);
+    this.activeDriverTask = wrapTask(driverTour, this, this.translations);
     this.activeDriverTask.drive(stepIndex);
   }
 
@@ -277,9 +278,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         StorageManager.parseStorageKeyPrefix(existingActiveTask);
       if (parsedIds === undefined) {
         console.error("No good task parsing value:", parsedIds);
-        // TODO: Add localization translation.
         new XWiki.widgets.Notification(
-          "Could not continue cross-page task.",
+          this.translations["guidedtour.driver.error"],
           "error",
         );
       } else {
@@ -299,7 +299,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
           );
           // TODO: Add localization translation.
           new XWiki.widgets.Notification(
-            "Could not continue cross-page task.",
+            this.translations["guidedtour.driver.error"],
             "error",
           );
         }
