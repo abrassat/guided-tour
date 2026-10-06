@@ -130,8 +130,8 @@ async function onResetTour() {
 onMounted(async () => {
   // Initialize the cache first.
   await guidedTourManager.getTours();
-  const fetchedTasks = (await guidedTourManager.getTasks(props.tour.id)) ?? [];
-  tasks.value = fetchedTasks;
+  const fetchedTasks = await guidedTourManager.getTasks(props.tour.id);
+  tasks.value = fetchedTasks ?? [];
   if (!fetchedTasks) {
     console.error("No tasks");
   }

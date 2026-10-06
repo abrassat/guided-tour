@@ -34,7 +34,14 @@ async function getTranslations(): Promise<Record<string, string>> {
   const { resolver } = await import(/* @vite-ignore */ webjarModule);
   const { translations } = await resolver.resolve({
     prefix: "guidedtour.driver.",
-    keys: ["next", "previous", "skipAll", "loading", "error"],
+    keys: [
+      "next",
+      "previous",
+      "skipAll",
+      "loading",
+      "error",
+      "error.initExistingTask",
+    ],
   });
   return translations;
 }

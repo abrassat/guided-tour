@@ -279,7 +279,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       if (parsedIds === undefined) {
         console.error("No good task parsing value:", parsedIds);
         new XWiki.widgets.Notification(
-          this.translations["guidedtour.driver.error"],
+          this.translations["guidedtour.driver.error.initExistingTask"],
           "error",
         );
       } else {
@@ -297,9 +297,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
             parsedIds,
             ", it didn't work.",
           );
-          // TODO: Add localization translation.
           new XWiki.widgets.Notification(
-            this.translations["guidedtour.driver.error"],
+            this.translations["guidedtour.driver.error.initExistingTask"],
             "error",
           );
         }
