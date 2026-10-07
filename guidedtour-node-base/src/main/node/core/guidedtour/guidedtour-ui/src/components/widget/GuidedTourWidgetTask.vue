@@ -100,12 +100,14 @@ const dependentTasks: TourTask[] = task.dependsOn
           return await guidedTourManager.getTask(task.tourId!, taskId);
         }),
       )
-    ).filter((dep: TourTask | undefined) => dep !== undefined)
+    )
+      .filter((dep) => dep !== undefined)
+      .filter((dep) => dep.active && dep.id != task.id)
   : [];
 
 function getRemainingDependentTasks(): TourTask[] {
   return dependentTasks.filter(
-    (dep: TourTask) => dep?.status !== TourTaskStatus.DONE,
+    (dep: TourTask) => dep.status !== TourTaskStatus.DONE,
   );
 }
 
