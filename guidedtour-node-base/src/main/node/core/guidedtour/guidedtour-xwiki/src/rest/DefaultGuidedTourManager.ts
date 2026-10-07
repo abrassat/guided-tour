@@ -141,11 +141,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         adjacentStep.targetAction?.toLowerCase(),
         adjacentStep.queryParameters,
       );
-      if (redirectURL != window.location) {
-        // Redirect to the expected page if the current one doesn't match.
-        window.location = redirectURL;
-        return true;
-      }
+      window.location = redirectURL;
+      return true;
     }
     return false;
   }
@@ -298,7 +295,9 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       stepIndex.toString(),
     );
 
-    if (this.redirectToExpectedPage(task.steps![stepIndex])) {
+    // Only redirect when the task is started fresh, not when it's resumed on page load (`remember`). This avoids
+    // redirect loops, and doesn't interrupt reflex actions that navigate on their own (e.g. "Save and view").
+    if (!remember && this.redirectToExpectedPage(task.steps![stepIndex])) {
       return;
     }
 
