@@ -30,7 +30,7 @@
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
       ['task-' + task.status]: true,
-      'task-dependent': !checkDependentTasksCompleted(),
+      'task-dependent': hasRemainingDependentTasks(),
       'guidedtour-task': true,
     }"
     :id="task.id"
@@ -38,10 +38,9 @@
     @click="onStartTask"
   >
     <template v-slot:pre-btns>
-      <!-- This is just for show, it shouldn't do anything. -->
-      <!-- TODO: This is entirely overkill and unneccessary, but I want these to shake if clicked on a depending task. -->
+      <!-- Icon to denote that a task has uncompleted dependencies. -->
       <i
-        v-if="!checkDependentTasksCompleted()"
+        v-if="hasRemainingDependentTasks()"
         ref="prebtns"
         class="always-show fa-solid fa-table-cells-row-lock"
       />
@@ -94,33 +93,40 @@ async function onResetTask() {
   isWaitingAsync.value = false;
 }
 
-const dependentTasks: (TourTask | undefined)[] = task.dependsOn
-  ? await Promise.all(
-      task.dependsOn!.map(async (taskId: string) => {
-        return await guidedTourManager.getTask(task.tourId!, taskId);
-      }),
-    )
+const dependentTasks: TourTask[] = task.dependsOn
+  ? (
+      await Promise.all(
+        task.dependsOn!.map(async (taskId: string) => {
+          return await guidedTourManager.getTask(task.tourId!, taskId);
+        }),
+      )
+    ).filter((dep: TourTask | undefined) => dep !== undefined)
   : [];
 
-function checkDependentTasksCompleted() {
-  return dependentTasks
-    .map((dep: TourTask | undefined) => dep?.status === TourTaskStatus.DONE)
-    .every(Boolean);
+function getRemainingDependentTasks(): TourTask[] {
+  return dependentTasks.filter(
+    (dep: TourTask) => dep?.status !== TourTaskStatus.DONE,
+  );
+}
+
+function hasRemainingDependentTasks(): boolean {
+  return getRemainingDependentTasks().length > 0;
 }
 
 /**
  * Get the tooltip/subtitle of this task, to tell the user which tasks were not completed.
  */
 function getDependencyHint() {
-  let uncompletedDeps: TourTask[] = [];
-  for (let dep of dependentTasks) {
-    if (dep && dep.status !== TourTaskStatus.DONE) {
-      uncompletedDeps.push(dep);
-    }
-  }
-  if (uncompletedDeps.length == 0) {
+  if (dependentTasks.length == 0) {
+    // This task has no dependencies, so show no hint.
     return "";
+  }
+  let uncompletedDeps: TourTask[] = getRemainingDependentTasks();
+  if (uncompletedDeps.length == 0) {
+    // TODO: Add translation strings.
+    return "All dependencies completed";
   } else {
+    // TODO: Add translation strings.
     return (
       "Depends on: " +
       uncompletedDeps.map((task: TourTask) => task.title).join(", ")
@@ -137,20 +143,13 @@ function playShakeAnimation(element: HTMLElement | null) {
 }
 
 async function onSkipTask() {
-  // if (!checkDependentTasksCompleted()) {
-  //   // Short circuit if trying to skip a task with uncompleted dependencies.
-  //   // The UI code above will handle displaying the warning.
-  //   playShakeAnimation(prebtns.value);
-  //   new XWiki.widgets.Notification(getDependencyHint(), "error");
-  //   return;
-  // }
   isWaitingAsync.value = true;
   await guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED);
   isWaitingAsync.value = false;
 }
 
 async function onStartTask() {
-  if (!checkDependentTasksCompleted()) {
+  if (getRemainingDependentTasks().length > 0) {
     // Short circuit if trying to start a task with uncompleted dependencies.
     // The UI code above will handle displaying the warning.
     playShakeAnimation(prebtns.value);
@@ -199,36 +198,41 @@ async function onStartTask() {
 @keyframes shake {
   10%,
   90% {
-    transform: translateX(-0.5em);
+    transform: translateX(calc(var(--shake-magnitude) * -0.5));
   }
   30%,
   50%,
   70% {
-    transform: translateX(-1em);
+    transform: translateX(calc(var(--shake-magnitude) * -1));
   }
   20%,
   40%,
   60%,
   80% {
-    transform: translateX(1em);
+    transform: translateX(var(--shake-magnitude));
   }
 }
 .shake-anim {
   animation: shake 0.65s;
 }
 
-.guidedtour-task.task-DONE {
+.guidedtour-task.task-DONE :deep(.guidedtour-widget-item-title) {
   text-decoration: line-through;
+}
+.guidedtour-task.task-DONE {
   color: var(
     --guidedtour-text-color
   ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
-/* TODO: Find a better style */
 .guidedtour-task.task-dependent {
-  color: var(--guidedtour-text-color);
   background: var(--guidedtour-background-color-secondary) 100%;
 }
 .guidedtour-task.task-SKIPPED {
   color: var(--guidedtour-text-color);
+}
+
+/* TODO tasks with uncompleted dependencies cannot be skipped. (But you can reset a task with uncompleted dependencies) */
+.task-dependent.task-TODO .post-btn {
+  visibility: hidden;
 }
 </style>
