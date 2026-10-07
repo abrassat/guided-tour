@@ -69,6 +69,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
     private readonly xm,
     sharedStore: TourStore,
+    private readonly translations: Record<string, string>,
   ) {
     this.sharedStore = sharedStore;
     const restClient = new GuidedTourRestClient();
@@ -232,15 +233,15 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   async startTask(task: TourTask, remember = true): Promise<void> {
     // Fetch or get the cached steps.
     task.steps ??= await this.getSteps(task.tourId!, task.id);
-    let stepIndex = 0;
-    if (remember) {
-      stepIndex = Number.parseInt(
-        StorageManager.getStorageKey(
-          StorageManager.getTaskCurrentStepStorageKey(task),
-        ) ?? "0",
-      );
-    }
-    const driverTour = driver(getDriverConfigForSteps(task, this));
+    const stepIndex = remember
+      ? Number.parseInt(
+          StorageManager.getStorageKey(
+            StorageManager.getTaskCurrentStepStorageKey(task),
+          ) ?? "0",
+        )
+      : 0;
+    const config = await getDriverConfigForSteps(task, this, this.translations);
+    const driverTour = driver(config);
     StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
       StorageManager.getStorageKeyPrefix(task),
@@ -251,7 +252,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
 
     this.activeTask = task;
-    this.activeDriverTask = wrapTask(driverTour, this);
+    this.activeDriverTask = wrapTask(driverTour, this, this.translations);
     this.activeDriverTask.drive(stepIndex);
   }
 
@@ -263,9 +264,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   }
 
   /**
-   * Check session storage for an in-progress task and resume it.
+   * Check session storage for an in-progress task and resume it. Shows a notification if an error was encountered.
    * Called on page load to recover tours that span multiple pages.
    */
+  // eslint-disable-next-line max-statements
   async initExistingTask() {
     // FIXME: This should be moved somewhere else, but idk where. `GuidedTourWidget.vue` ? idk
     const existingActiveTask = StorageManager.getStorageKey(
@@ -276,6 +278,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         StorageManager.parseStorageKeyPrefix(existingActiveTask);
       if (parsedIds === undefined) {
         console.error("No good task parsing value:", parsedIds);
+        new XWiki.widgets.Notification(
+          this.translations["guidedtour.driver.error.initExistingTask"],
+          "error",
+        );
       } else {
         // Populate the cache by fetching all tours first.
         await this.getTours();
@@ -290,6 +296,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
             "Tried to get task for ",
             parsedIds,
             ", it didn't work.",
+          );
+          new XWiki.widgets.Notification(
+            this.translations["guidedtour.driver.error.initExistingTask"],
+            "error",
           );
         }
       }

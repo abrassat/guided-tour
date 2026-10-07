@@ -29,7 +29,7 @@
     :loading="false"
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
-      ['task-' + task!.status]: true,
+      ['task-' + task.status]: true,
       'task-dependent': !checkDependentTasksCompleted(),
       'guidedtour-task': true,
     }"
@@ -52,7 +52,7 @@
     </template>
     <template v-slot:post-btns>
       <button
-        v-if="task!.status == TourTaskStatus.TODO"
+        v-if="task.status == TourTaskStatus.TODO"
         class="post-btn"
         @click.stop="onSkipTask"
       >
@@ -75,9 +75,10 @@ import type {
   GuidedTourManager,
   TourTask,
 } from "@xwiki/contrib-guidedtour-api";
+import type { Reactive } from "vue";
 
 const { task, tourId } = defineProps<{
-  task: TourTask;
+  task: Reactive<TourTask>;
   tourId: string;
 }>();
 
@@ -86,14 +87,10 @@ const state = reactive({
   isWaitingAsync: false,
 });
 const { isWaitingAsync } = toRefs(state);
-const guidedTourManager: GuidedTourManager = inject(
-  "DefaultGuidedTourManager",
-)!;
-const emit = defineEmits(["taskStatusChanged"]);
+const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
 async function onResetTask() {
   isWaitingAsync.value = true;
-  await guidedTourManager.setTaskStatus(task!, TourTaskStatus.TODO);
-  emit("taskStatusChanged", task);
+  await guidedTourManager.setTaskStatus(task, TourTaskStatus.TODO);
   isWaitingAsync.value = false;
 }
 
@@ -148,8 +145,7 @@ async function onSkipTask() {
   //   return;
   // }
   isWaitingAsync.value = true;
-  await guidedTourManager.setTaskStatus(task!, TourTaskStatus.SKIPPED);
-  emit("taskStatusChanged", task);
+  await guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED);
   isWaitingAsync.value = false;
 }
 
@@ -163,13 +159,10 @@ async function onStartTask() {
   }
   // Fetch the steps manually, so we can show the loader nicely while waiting for the steps to be fetched.
   isWaitingAsync.value = true;
-  await guidedTourManager.getSteps(tourId, task!.id).finally(() => {
+  await guidedTourManager.getSteps(tourId, task.id).finally(() => {
     isWaitingAsync.value = false;
   });
-  guidedTourManager.startTask(task!, false).catch((e) => {
-    console.error(e);
-    new XWiki.widgets.Notification(e, "error");
-  });
+  guidedTourManager.startTask(task, false);
 }
 </script>
 

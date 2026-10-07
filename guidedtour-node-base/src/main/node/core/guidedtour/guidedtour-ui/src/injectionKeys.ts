@@ -17,13 +17,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+import type { Resolver } from "@xwiki/platform-localization-api";
+import type { InjectionKey } from "vue";
 
-// TODO: move to a dedicated module (see XWIKI-24006)
 /**
- * The translations result. It's a map of translation keys as keys, and their translation values in the requested locale
- * as values.
- * @since 1.0
+ * Key under which the application provides the localization resolver used by the widget components to load their
+ * translations.
+ * @since 0.2
  * @beta
  */
-type Translations = { [p: string]: string };
-export type { Translations };
+const RESOLVER: InjectionKey<Resolver> = Symbol("guidedtour.resolver");
+
+export { RESOLVER };

@@ -25,14 +25,15 @@
 -->
 
 <template>
-  <div class="header">
+  <div class="header" v-if="!isLoading">
     <div class="top-bar" @click="onCloseButtonClicked(false)">
       <span class="icon fa fa-compass" />
-      <div class="title">Guided Tours</div>
+      <div class="title">{{ t("guidedtour.widget.header.title") }}</div>
       <div class="right-group">
         <button
           id="widget-close"
           class="btn"
+          :aria-label="t('guidedtour.widget.header.close')"
           @click.stop="onCloseButtonClicked(true)"
         >
           <i class="fa-solid fa-x" />
@@ -45,8 +46,11 @@
 
 <script setup lang="ts">
 import GuidedTourWidgetProgressBar from "./GuidedTourWidgetProgressBar.vue";
-import { computed } from "vue";
+import { RESOLVER } from "../../injectionKeys";
+import { useI18nAdapter } from "@xwiki/platform-localization-adapter-vue";
+import { computed, inject } from "vue";
 import type { ComputedRef } from "vue";
+
 const emit = defineEmits(["closeGuidedTourWidget"]);
 
 function onCloseButtonClicked(buttonClicked: boolean) {
@@ -56,6 +60,12 @@ function onCloseButtonClicked(buttonClicked: boolean) {
 const props = defineProps<{ progress: ComputedRef<number> }>();
 // Reactive read-only ref for progress.
 const progress = props.progress;
+
+const resolver = inject(RESOLVER)!;
+const { t, isLoading } = useI18nAdapter(resolver, {
+  prefix: "guidedtour.widget.header.",
+  keys: ["title", "close"],
+});
 </script>
 
 <style scoped>

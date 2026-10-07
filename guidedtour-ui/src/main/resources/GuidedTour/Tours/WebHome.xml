@@ -37,11 +37,10 @@
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
   <content>{{velocity}}
-## Translations should be added as part of GUIDEDTOUR-4: Make UI translated
-#set ($discard = $xwiki.jsx.use('GuidedTour.Tours.WebHome'))
+  #set ($discard = $xwiki.jsx.use('GuidedTour.Tours.WebHome'))
   #set ($sourceParameters = $escapetool.url({
     'className': 'XWiki.GuidedTour.TourClass',
-    'translationPrefix': 'guidedtour.livetable.'
+    'translationPrefix': 'guidedtour.tours.livedata.'
   }))
   #set ($liveDataConfig = {
     "meta": {
@@ -51,9 +50,12 @@
         { 'id': '_actions', 'displayer': {'id': 'actions', 'actions': ['edit', 'delete', 'view']} }
       ],
       "actions": [
-        { 'id': 'edit', "description": "Edit tour" },
-        { 'id': 'delete', "description": "Delete tour" },
-        { 'id': 'view', "description": "View tour" }
+        { 'id': 'edit',
+          'description': $services.localization.render('guidedtour.tours.livedata._actions.edit.hint') },
+        { 'id': 'delete',
+          'description': $services.localization.render('guidedtour.tours.livedata._actions.delete.hint') },
+        { 'id': 'view',
+          'description': $services.localization.render('guidedtour.tours.livedata._actions.view.hint') }
       ]
     }
   })
