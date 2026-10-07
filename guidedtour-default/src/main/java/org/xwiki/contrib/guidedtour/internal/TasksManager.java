@@ -267,11 +267,11 @@ public class TasksManager
     {
         BaseObject taskObj = doc.getXObject(TASK_CLASS);
         String title = taskObj.getStringValue(TourProperty.TITLE.getBaseKey());
-        List<String> dependsOn = taskObj.getListValue(TourProperty.DEPENDS_ON.getBaseKey());
+        List<?> dependsOn = taskObj.getListValue(TourProperty.DEPENDS_ON.getBaseKey());
         int order = taskObj.getIntValue(TourProperty.ORDER.getBaseKey());
         boolean isActive = taskObj.getIntValue(TourProperty.IS_ACTIVE.getBaseKey()) == 1;
         return new TaskDTO(doc.getDocumentReference().getName(), title, order, isActive,
-            dependsOn.stream().map(documentReferenceResolver::resolve).filter(
+            dependsOn.stream().map(String::valueOf).map(documentReferenceResolver::resolve).filter(
                     (DocumentReference dependentTaskDoc) -> dependentTaskDoc.getSpaceReferences()
                         .equals(doc.getDocumentReference().getSpaceReferences())).map((DocumentReference::getName))
                 .collect(Collectors.toList()));
