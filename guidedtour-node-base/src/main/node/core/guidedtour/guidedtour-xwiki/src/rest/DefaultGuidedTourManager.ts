@@ -109,6 +109,37 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
+  private redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
+    if (adjacentStep === undefined) {
+      return false;
+    }
+    const currentDocumentReference = XWiki.currentDocument.documentReference;
+    const targetDocumentReference = adjacentStep.targetPage
+      ? XWiki.Model.resolve(
+          adjacentStep.targetPage,
+          XWiki.EntityType.DOCUMENT,
+          currentDocumentReference,
+        )
+      : currentDocumentReference;
+    if (
+      XWiki.Model.serialize(targetDocumentReference) !=
+        XWiki.Model.serialize(currentDocumentReference) ||
+      (adjacentStep.targetAction &&
+        XWiki.contextaction != adjacentStep.targetAction?.toLowerCase())
+    ) {
+      const redirectURL = new XWiki.Document(targetDocumentReference).getURL(
+        adjacentStep.targetAction?.toLowerCase(),
+        adjacentStep.queryParameters,
+      );
+      if (redirectURL != window.location) {
+        // Redirect to the expected page if the current one doesn't match.
+        window.location = redirectURL;
+        return true;
+      }
+    }
+    return false;
+  }
+
   async getTours(): Promise<TourTour[]> {
     const tours = await this.defaultTourManagerApi.getTours();
 
@@ -230,6 +261,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * @param task - The task to start.
    * @param remember - Whether to resume from a saved step index.
    */
+  // eslint-disable-next-line max-statements
   async startTask(task: TourTask, remember = true): Promise<void> {
     // Fetch or get the cached steps.
     task.steps ??= await this.getSteps(task.tourId!, task.id);
@@ -250,6 +282,15 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getTaskStepStorageStorageKey(task),
       JSON.stringify(task.steps!),
     );
+    // Make sure the right storage parameters are set, in case we'll redirect.
+    StorageManager.setStorageKey(
+      StorageManager.getTaskCurrentStepStorageKey(task),
+      stepIndex.toString(),
+    );
+
+    if (this.redirectToExpectedPage(task.steps![stepIndex])) {
+      return;
+    }
 
     this.activeTask = task;
     this.activeDriverTask = wrapTask(driverTour, this, this.translations);

@@ -162,37 +162,6 @@ const util = {
     const stepOffset = direction == "next" ? 1 : -1;
     return guidedTourTask.steps?.[currentStepActiveIndex + stepOffset];
   },
-  redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
-    if (adjacentStep === undefined) {
-      return false;
-    }
-    const currentDocumentReference = XWiki.currentDocument.documentReference;
-    const targetDocumentReference = adjacentStep.targetPage
-      ? XWiki.Model.resolve(
-          adjacentStep.targetPage,
-          XWiki.EntityType.DOCUMENT,
-          currentDocumentReference,
-        )
-      : currentDocumentReference;
-    if (
-      XWiki.Model.serialize(targetDocumentReference) !=
-        XWiki.Model.serialize(currentDocumentReference) ||
-      (adjacentStep.targetAction &&
-        XWiki.contextaction != adjacentStep.targetAction?.toLowerCase())
-    ) {
-      const redirectURL = new XWiki.Document(targetDocumentReference).getURL(
-        adjacentStep.targetAction?.toLowerCase(),
-        adjacentStep.queryParameters,
-      );
-      if (redirectURL != window.location) {
-        // Redirect to the expected page if the current one doesn't match.
-        window.location = redirectURL;
-        return true;
-      }
-    }
-    return false;
-  },
-  // eslint-disable-next-line max-statements
   async moveToAdjacentStep(
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
@@ -231,11 +200,9 @@ const util = {
       adjacentStepIndex.toString(),
     );
 
-    if (!util.redirectToExpectedPage(adjacentStep)) {
-      // The `.drive()` method is overridden in xwiki to wait for elements to appear in the page, thus making it async (as
-      // opposed to driver.js's default non-async method).
-      await guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
-    }
+    // The `.drive()` method is overridden in xwiki to wait for elements to appear in the page, thus making it async (as
+    // opposed to driver.js's default non-async method).
+    await guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
   },
 };
 
@@ -283,14 +250,6 @@ function XWikiDriverConfig(
         StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
         activeIndex.toString(),
       );
-
-      if (
-        util.redirectToExpectedPage(
-          guidedTourManager.activeTask?.steps![activeIndex],
-        )
-      ) {
-        return;
-      }
     },
     onDestroyed: function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
@@ -381,20 +340,6 @@ function wrapTask(
       "inprogress",
     );
     const currentStepActiveIndex = guidedTourTask.getActiveIndex();
-    // Make sure the right storage parameters are set, in case we'll redirect.
-    StorageManager.setStorageKey(
-      StorageManager.getTaskCurrentStepStorageKey(
-        guidedTourManager.activeTask!,
-      ),
-      stepIndex.toString(),
-    );
-    if (
-      util.redirectToExpectedPage(
-        guidedTourManager.activeTask!.steps![stepIndex],
-      )
-    ) {
-      return;
-    }
     try {
       const targetedElement = await util.waitForElement(
         guidedTourManager.activeTask!.steps![stepIndex].element,
