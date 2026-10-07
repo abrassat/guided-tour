@@ -121,9 +121,15 @@ const props = defineProps<{
 .guidedtour-widget-item-text {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 .guidedtour-widget-item-hint {
   font-size: x-small;
+  contain: inline-size;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .guidedtour-widget-item:hover {
