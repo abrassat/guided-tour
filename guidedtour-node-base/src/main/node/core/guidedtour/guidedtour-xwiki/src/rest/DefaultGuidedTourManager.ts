@@ -109,6 +109,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
+  // eslint-disable-next-line max-statements
   private redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
     if (adjacentStep === undefined) {
       return false;
@@ -121,11 +122,20 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
           currentDocumentReference,
         )
       : currentDocumentReference;
+    // Check that every expected query parameter is present, with the expected value, in the current URL.
+    const currentPageQueryParams = new URLSearchParams(window.location.search);
+    let hasExpectedQueryParams = true;
+    new URLSearchParams(adjacentStep.queryParameters).forEach((value, name) => {
+      hasExpectedQueryParams &&= currentPageQueryParams
+        .getAll(name)
+        .includes(value);
+    });
     if (
       XWiki.Model.serialize(targetDocumentReference) !=
         XWiki.Model.serialize(currentDocumentReference) ||
       (adjacentStep.targetAction &&
-        XWiki.contextaction != adjacentStep.targetAction?.toLowerCase())
+        XWiki.contextaction != adjacentStep.targetAction?.toLowerCase()) ||
+      !hasExpectedQueryParams
     ) {
       const redirectURL = new XWiki.Document(targetDocumentReference).getURL(
         adjacentStep.targetAction?.toLowerCase(),
