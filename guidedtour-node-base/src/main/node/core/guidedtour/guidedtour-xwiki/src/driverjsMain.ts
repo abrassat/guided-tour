@@ -26,12 +26,26 @@ import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
 
 type StepDirection = "next" | "previous";
 
+/**
+ * How long (in ms) driver.js waits for a step's element to become visible before giving up on the task.
+ */
+const WAIT_FOR_ELEMENT_TIMEOUT = 3000;
+
+/**
+ * How long (in ms) a reflex step on a text input waits after the click, to let the user type, before moving on.
+ */
+const TEXT_INPUT_REFLEX_DELAY = 5000;
+
 const util = {
   /**
    * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
    * step). This flag is true when the page is being unloaded before a redirect (after a `beforeunload` event).
    */
   pageUnloadingFlag: false,
+  /**
+   * Shown while driver.js waits for the element of the step being driven to.
+   */
+  loadingNotification: undefined as { hide(): void } | undefined,
   /**
    * Add listener so `pageUnloadingFlag` is set to true on `beforeunload` event trigger.
    */
@@ -63,72 +77,38 @@ const util = {
     return customSkipAll;
   },
   /**
-   * For use in `waitForElement` below.
-   *
-   * @param element - The element to check
-   * @returns true if the element is visible on the page, false otherwise.
+   * @param selector - css selector for the element to find (should be compatible with document.querySelector)
+   * @returns the element, if it exists and is visible on the page
    */
-  isElementVisible(element: Element): boolean {
-    const style = globalThis.getComputedStyle(element);
-    if (style.display == "none") {
-      return false;
+  findVisibleElement(selector: string): Element | undefined {
+    const queriedElement = document.querySelector(selector);
+    if (
+      queriedElement &&
+      globalThis.getComputedStyle(queriedElement).display != "none"
+    ) {
+      return queriedElement;
     } else {
-      return true;
+      return undefined;
     }
   },
-  /**
-   * Wait until an element is visible on the page.
-   *
-   * @param selector - css selector for the element to wait for (should be compatible with document.querySelector)
-   * @returns a promise which succeeds if the element is found within the time limit, and fails otherwise
-   */
-  async waitForElement(
-    selector: string | undefined,
-  ): Promise<Element | undefined> {
-    if (!selector) {
-      // Return instantly if we're not supposed to wait for an element.
-      return;
-    }
-    return util.retryWithCallback(() => {
-      const queriedElement = document.querySelector(selector);
-      if (queriedElement && util.isElementVisible(queriedElement)) {
-        return queriedElement;
-      } else {
-        return undefined;
-      }
-    }, selector);
+  hideLoadingNotification() {
+    util.loadingNotification?.hide();
+    util.loadingNotification = undefined;
   },
   /**
-   *
-   * @param callbackFn - The function to run to test if our goal has been achieved. Should return truthy if achieved,
-   *     false otherwise (if we still need to wait)
-   * @param probeInterval - time (in ms) to wait after a failed check for the specified element. Decrease this argument
-   *                to get a quicker response once the specified element appears in the page.
-   * @param maxIntervals - how many probe intervals to wait until rejecting
-   * @param consoleName - For debugging, to display in console
-   * @returns the return value of callbackFn if successful, or a failed Promise if the timeout is reached.
+   * Drive to the given step, showing a loading notification until the step is highlighted.
    */
-  async retryWithCallback<T>(
-    callbackFn: () => T,
-    consoleName = "something",
-    probeInterval = 50,
-    maxIntervals = 60,
-  ): Promise<T> {
-    // TODO: Could maybe use MutationObservers here?
-    console.debug(`waiting for ${consoleName}...`);
-    for (let i = 0; i < maxIntervals; i += 1) {
-      const retValue = callbackFn();
-      if (retValue) {
-        return retValue;
-      }
-      console.debug(`(${i}/${maxIntervals}) waiting for ${consoleName}...`);
-      await new Promise((resolve) => setTimeout(resolve, probeInterval));
-    }
-    return Promise.reject(
-      `Failed to confirm ${consoleName} after waiting ${
-        probeInterval * maxIntervals
-      } (${probeInterval} * ${maxIntervals}) ms.`,
+  driveToStep(
+    driverTask: Driver,
+    stepIndex: number,
+    translations: Record<string, string>,
+  ) {
+    util.hideLoadingNotification();
+    util.loadingNotification = new XWiki.widgets.Notification(
+      translations["guidedtour.driver.loading"],
+      "inprogress",
     );
+    driverTask.drive(stepIndex);
   },
   /**
    * Decides which buttons should be visible in the modal, and updates the DOM.
@@ -146,6 +126,9 @@ const util = {
       popDOM.footerButtons.removeChild(popDOM.nextButton);
       popDOM.footerButtons.removeChild(popDOM.previousButton);
     } else {
+      // Drop the driver.js button styles, so that the XWiki ones apply.
+      popDOM.nextButton.classList.remove("driver-popover-footer-btn");
+      popDOM.previousButton.classList.remove("driver-popover-footer-btn");
       popDOM.nextButton.classList.add("btn", "btn-sm", "btn-primary"); // TODO: Make this an <a> instead of
       // <button>
       popDOM.previousButton.classList.add("btn", "btn-sm"); // TODO: Make this an <a> instead of <button>
@@ -162,24 +145,16 @@ const util = {
     const stepOffset = direction == "next" ? 1 : -1;
     return guidedTourTask.steps?.[currentStepActiveIndex + stepOffset];
   },
-  async moveToAdjacentStep(
+  moveToAdjacentStep(
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
     direction: StepDirection,
+    translations: Record<string, string>,
   ) {
-    /*
-     * Things to consider:
-     * - Is the current step the one I expect?
-     * - Am I in the last step?
-     * - Am I expecting a redirect?
-     * - Wait for element to appear
-     */
     if (util.pageUnloadingFlag) {
       // Don't do anything if the page is currently in the process of redirecting.
       return;
     }
-    // Cache the current step index, so we can check later (after async operations) if we are in the same step
-    // we started in.
     const currentStepActiveIndex =
       guidedTourManager.activeDriverTask!.getActiveIndex()!;
     const adjacentStep = util.getAdjacentStep(
@@ -200,9 +175,11 @@ const util = {
       adjacentStepIndex.toString(),
     );
 
-    // The `.drive()` method is overridden in xwiki to wait for elements to appear in the page, thus making it async (as
-    // opposed to driver.js's default non-async method).
-    await guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
+    util.driveToStep(
+      guidedTourManager.activeDriverTask!,
+      adjacentStepIndex,
+      translations,
+    );
   },
 };
 
@@ -224,6 +201,22 @@ function XWikiDriverConfig(
     showProgress: true,
     showButtons: ["previous", "next", "close"],
     overlayOpacity: 0.3,
+    waitForElement: WAIT_FOR_ELEMENT_TIMEOUT,
+    onHighlightStarted: (element, step) => {
+      util.hideLoadingNotification();
+      if (element === undefined && step.element !== undefined) {
+        // driver.js gave up waiting for the step's targeted element. Skip the task, don't proceed with it.
+        console.error("Element not found for step:", step);
+        new XWiki.widgets.Notification(
+          translations["guidedtour.driver.error"],
+          "error",
+        );
+        void guidedTourManager.setTaskStatus(
+          guidedTourTask,
+          TourTaskStatus.SKIPPED,
+        );
+      }
+    },
     onPopoverRender: (popDOM, options) => {
       // TODO: Need to handle this better
       const activeIndex = options.state.activeIndex ?? -1;
@@ -253,7 +246,7 @@ function XWikiDriverConfig(
     },
     onDestroyed: function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
-      // The state provided by driver.js is empty when this function is called.
+      util.hideLoadingNotification();
       if (guidedTourManager.activeTask === undefined) {
         // The task status was already set by an external command, so don't recompute the status here.
         return;
@@ -271,14 +264,36 @@ function XWikiDriverConfig(
         guidedTourManager.setTaskStatus(guidedTourTask, status);
       }
     },
-    onNextClick: async () => {
-      await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
+    // Also called by driver.js when the targeted element of a reflex step is clicked (see `advanceOnClick`).
+    onNextClick: async (element, step, options) => {
+      if (
+        step.advanceOnClick &&
+        element instanceof HTMLInputElement &&
+        element.type == "text"
+      ) {
+        // Special case for text inputs: wait before continuing, to allow the user to type stuff.
+        // TODO: Maybe add a 'match text' setting for advancing the step.
+        await new Promise((resolve) =>
+          setTimeout(resolve, TEXT_INPUT_REFLEX_DELAY),
+        );
+        if (options.driver.getActiveIndex() !== options.index) {
+          // The active step changed in the meantime.
+          return;
+        }
+      }
+      util.moveToAdjacentStep(
+        guidedTourTask,
+        guidedTourManager,
+        "next",
+        translations,
+      );
     },
-    onPrevClick: async () => {
-      await util.moveToAdjacentStep(
+    onPrevClick: () => {
+      util.moveToAdjacentStep(
         guidedTourTask,
         guidedTourManager,
         "previous",
+        translations,
       );
     },
   };
@@ -288,8 +303,13 @@ function convertToDriverStep(
   step: TourStep,
   guidedTourTask: TourTask,
 ): DriveStep {
+  const selector = step.element;
   return {
-    element: step.element,
+    // driver.js waits (see `waitForElement`) while this returns nothing, so only hidden elements are waited for too.
+    element: selector
+      ? ((() => util.findVisibleElement(selector)) as () => Element)
+      : undefined,
+    advanceOnClick: step.reflex,
     popover: {
       title: step.title ?? guidedTourTask.title,
       description: step.content,
@@ -318,152 +338,15 @@ async function getDriverConfigForSteps(
   return config;
 }
 
-function wrapTask(
-  guidedTourTask: Driver,
-  guidedTourManager: DefaultGuidedTourManager,
-  translations: Record<string, string>,
-): Driver {
-  function hasActiveStepIndexChanged(
-    previousActiveStepIndex: number | undefined,
-    currentStepActiveIndex: number | undefined,
-  ) {
-    return (
-      previousActiveStepIndex !== undefined &&
-      currentStepActiveIndex != previousActiveStepIndex
-    );
-  }
-  const _drive = guidedTourTask.drive;
-  // eslint-disable-next-line max-statements
-  guidedTourTask.drive = async function (stepIndex: number = 0) {
-    const loadingNotification = new XWiki.widgets.Notification(
-      translations["guidedtour.driver.loading"],
-      "inprogress",
-    );
-    const currentStepActiveIndex = guidedTourTask.getActiveIndex();
-    try {
-      const targetedElement = await util.waitForElement(
-        guidedTourManager.activeTask!.steps![stepIndex].element,
-      );
-      if (
-        hasActiveStepIndexChanged(
-          currentStepActiveIndex,
-          guidedTourTask.getActiveIndex(),
-        )
-      ) {
-        // The active step moved while waiting for the element, so don't do anything.
-        loadingNotification.hide();
-        return;
-      }
-      bindReflexEvents(
-        targetedElement,
-        guidedTourManager.activeTask!.steps![stepIndex],
-        guidedTourManager,
-      );
-      StorageManager.setStorageKey(
-        StorageManager.getTaskCurrentStepStorageKey(
-          guidedTourManager.activeTask!,
-        ),
-        stepIndex.toString(),
-      );
-      _drive(stepIndex);
-      loadingNotification.hide();
-      return;
-    } catch (e) {
-      if (
-        hasActiveStepIndexChanged(
-          currentStepActiveIndex,
-          guidedTourTask.getActiveIndex(),
-        )
-      ) {
-        // The active step moved while waiting for the element, so don't do anything.
-        loadingNotification.hide();
-        return;
-      }
-      // We didn't find the element we wanted. Don't proceed with the task.
-      console.error(e);
-      loadingNotification.replace(
-        new XWiki.widgets.Notification(
-          translations["guidedtour.driver.error"],
-          "error",
-        ),
-      );
-      // Skip the task since we didn't find the step's targeted element in the page.
-      guidedTourManager.setTaskStatus(
-        guidedTourManager.activeTask!,
-        TourTaskStatus.SKIPPED,
-      );
-    }
-  }.bind(guidedTourTask);
-  return guidedTourTask;
-}
+const { driveToStep, hideLoadingNotification } = util;
 
-export { XWikiDriverConfig, driver, getDriverConfigForSteps, wrapTask };
-
-/**
- * Adds a callback that triggers when the HTML element is interacted with.
- *
- * @param element - The element which should be interacted with in order to proceed.
- * @param step - The current step. Used to confirm that the active step is the expected one.
- * @param guidedTourManager - The guidedTourManager Api instance.
- * @param callbackFn - A callback to execute once the element is interacted with.
- */
-function bindReflexEvents(
-  element: Element | undefined,
-  step: TourStep,
-  guidedTourManager: DefaultGuidedTourManager,
-  callbackFn: () => void = () => {
-    const activeIndex = guidedTourManager.activeDriverTask?.getActiveIndex();
-    if (activeIndex === undefined) {
-      return;
-    }
-    // Always move to the next step on reflex click.
-    void util.moveToAdjacentStep(
-      guidedTourManager.activeTask!,
-      guidedTourManager,
-      "next",
-    );
-  },
-) {
-  console.debug("Doing reflex bind");
-  if (!step.reflex || element === undefined) {
-    if (step.reflex && element === undefined) {
-      console.warn("WARNING: reflex step with empty element:", step);
-    }
-    return;
-  }
-  const triggerCallback = () => {
-    console.debug("Removing reflex listener on ", element);
-    element.removeEventListener("click", callback);
-    callbackFn();
-  };
-  const callback = (event: Event) => {
-    console.debug(event);
-    if (
-      event.target instanceof HTMLInputElement &&
-      event.target.type == "text"
-    ) {
-      // Special case for text inputs.
-      // Right now, the text input awaits for 5s before continuing, to allow the user to type stuff.
-      // TODO: Maybe add a 'match text' setting for advancing the step.
-      const msTimeout = 5000;
-      new Promise((resolve) => setTimeout(resolve, msTimeout))
-        .then(() => {
-          console.debug("sloip awoked");
-          if (
-            step.order != guidedTourManager.activeDriverTask?.getActiveIndex()
-          ) {
-            triggerCallback();
-          }
-          return;
-        })
-        .catch(console.error);
-    } else {
-      triggerCallback();
-    }
-  };
-  console.debug("Adding reflex listener on ", element);
-  element.addEventListener("click", callback);
-}
+export {
+  XWikiDriverConfig,
+  driveToStep,
+  driver,
+  getDriverConfigForSteps,
+  hideLoadingNotification,
+};
 
 // FIXME: From old TourJS.xml
 /*
