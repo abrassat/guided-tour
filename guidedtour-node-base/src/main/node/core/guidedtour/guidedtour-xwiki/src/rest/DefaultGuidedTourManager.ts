@@ -109,8 +109,13 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
+  /**
+   * Check if the current page matches the one expected by the step, and redirect to it otherwise.
+   * @param adjacentStep - The step whose expected page to check.
+   * @returns true if the current page is not the expected one.
+   */
   // eslint-disable-next-line max-statements
-  private redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
+  redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
     if (adjacentStep === undefined) {
       return false;
     }
