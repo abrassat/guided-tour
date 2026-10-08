@@ -271,7 +271,14 @@ function XWikiDriverConfig(
         guidedTourManager.setTaskStatus(guidedTourTask, status);
       }
     },
-    onNextClick: async () => {
+    onNextClick: async (element, _step, options) => {
+      if (
+        guidedTourTask.steps![options.state.activeIndex!].reflex &&
+        element instanceof HTMLElement
+      ) {
+        element.click();
+        return;
+      }
       await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
     },
     onPrevClick: async () => {
