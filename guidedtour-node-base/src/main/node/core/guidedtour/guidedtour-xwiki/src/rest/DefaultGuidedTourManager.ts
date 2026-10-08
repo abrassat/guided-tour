@@ -130,11 +130,15 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         .getAll(name)
         .includes(value);
     });
+    const pageAction =
+      XWiki.contextaction == "view" && window.location.hash == "#edit"
+        ? "edit"
+        : XWiki.contextaction;
     if (
       XWiki.Model.serialize(targetDocumentReference) !=
         XWiki.Model.serialize(currentDocumentReference) ||
       (adjacentStep.targetAction &&
-        XWiki.contextaction != adjacentStep.targetAction?.toLowerCase()) ||
+        pageAction != adjacentStep.targetAction?.toLowerCase()) ||
       !hasExpectedQueryParams
     ) {
       const redirectURL = new XWiki.Document(targetDocumentReference).getURL(
