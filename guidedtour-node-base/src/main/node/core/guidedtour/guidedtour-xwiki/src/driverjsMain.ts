@@ -467,7 +467,7 @@ function bindReflexEvents(
         .then(() => {
           console.debug("sloip awoked");
           if (
-            step.order != guidedTourManager.activeDriverTask?.getActiveIndex()
+            step.order == guidedTourManager.activeDriverTask?.getActiveIndex()
           ) {
             triggerCallback();
           }
