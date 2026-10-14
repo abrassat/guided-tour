@@ -114,7 +114,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * @param adjacentStep - The step whose expected page to check.
    * @returns true if the current page is not the expected one.
    */
-  // eslint-disable-next-line max-statements
   redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
     if (adjacentStep === undefined) {
       return false;
@@ -127,33 +126,66 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
           currentDocumentReference,
         )
       : currentDocumentReference;
+    if (this.isOnExpectedPage(adjacentStep, targetDocumentReference)) {
+      return false;
+    }
+    window.location.href = this.resolveStepRedirectURL(
+      adjacentStep,
+      targetDocumentReference,
+    );
+    return true;
+  }
+
+  /**
+   * Check if the current page matches the page, action and query parameters expected by the step.
+   * @param step - The step whose expected page to check.
+   * @param targetDocumentReference - The reference of the page expected by the step.
+   * @returns true if the current page is the expected one.
+   */
+  // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
+  private isOnExpectedPage(step: TourStep, targetDocumentReference): boolean {
     // Check that every expected query parameter is present, with the expected value, in the current URL.
     const currentPageQueryParams = new URLSearchParams(window.location.search);
     let hasExpectedQueryParams = true;
-    new URLSearchParams(adjacentStep.queryParameters).forEach((value, name) => {
+    new URLSearchParams(step.queryParameters).forEach((value, name) => {
       hasExpectedQueryParams &&= currentPageQueryParams
         .getAll(name)
         .includes(value);
     });
+    // Inplace WYSIWYG leads to an URL like `/view/page#edit` instead of `/edit/page`, so we need to include it as part of the EDIT pageAction.
     const pageAction =
       XWiki.contextaction == "view" && window.location.hash == "#edit"
         ? "edit"
         : XWiki.contextaction;
-    if (
-      XWiki.Model.serialize(targetDocumentReference) !=
-        XWiki.Model.serialize(currentDocumentReference) ||
-      (adjacentStep.targetAction &&
-        pageAction != adjacentStep.targetAction?.toLowerCase()) ||
-      !hasExpectedQueryParams
-    ) {
-      const redirectURL = new XWiki.Document(targetDocumentReference).getURL(
-        adjacentStep.targetAction?.toLowerCase(),
-        adjacentStep.queryParameters,
-      );
-      window.location = redirectURL;
-      return true;
+    const targetAction = step.targetAction?.toLowerCase();
+    // The COMMENT pageAction is a view of the page, see resolveStepRedirectURL.
+    const expectedAction = targetAction == "comment" ? "view" : targetAction;
+    return (
+      XWiki.Model.serialize(targetDocumentReference) ==
+        XWiki.Model.serialize(XWiki.currentDocument.documentReference) &&
+      (!expectedAction || pageAction == expectedAction) &&
+      hasExpectedQueryParams
+    );
+  }
+
+  /**
+   * Resolve the URL to redirect to in order to reach the page expected by the step.
+   * @param step - The step whose redirect URL to resolve.
+   * @param targetDocumentReference - The reference of the page expected by the step.
+   * @returns the redirect URL.
+   */
+  private resolveStepRedirectURL(
+    step: TourStep,
+    // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
+    targetDocumentReference,
+  ): string {
+    const targetAction = step.targetAction?.toLowerCase();
+    const targetDocument = new XWiki.Document(targetDocumentReference);
+    // There's no "comment" action, comments are shown in the comments tab of the view action.
+    if (targetAction == "comment") {
+      return targetDocument.getURL("view", step.queryParameters, "Comment");
     }
-    return false;
+    return targetDocument.getURL(targetAction, step.queryParameters);
   }
 
   async getTours(): Promise<TourTour[]> {
@@ -307,6 +339,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // Only redirect when the task is started fresh, not when it's resumed on page load (`remember`). This avoids
     // redirect loops, and doesn't interrupt reflex actions that navigate on their own (e.g. "Save and view").
     if (!remember && this.redirectToExpectedPage(task.steps![stepIndex])) {
+      // Return before setting `activeTask`, since it only lives in memory and would be lost on navigation anyway.
+      // The new task is persisted through the storage keys set above, and `initExistingTask()` resumes it on page load.
       return;
     }
 
