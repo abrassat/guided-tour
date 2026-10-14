@@ -157,9 +157,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       XWiki.contextaction == "view" && window.location.hash == "#edit"
         ? "edit"
         : XWiki.contextaction;
-    const targetAction = step.targetAction?.toLowerCase();
-    // The COMMENT pageAction is a view of the page, see resolveStepRedirectURL.
-    const expectedAction = targetAction == "comment" ? "view" : targetAction;
+    const expectedAction = step.targetAction?.toLowerCase();
     return (
       XWiki.Model.serialize(targetDocumentReference) ==
         XWiki.Model.serialize(XWiki.currentDocument.documentReference) &&
@@ -179,13 +177,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
     targetDocumentReference,
   ): string {
-    const targetAction = step.targetAction?.toLowerCase();
-    const targetDocument = new XWiki.Document(targetDocumentReference);
-    // There's no "comment" action, comments are shown in the comments tab of the view action.
-    if (targetAction == "comment") {
-      return targetDocument.getURL("view", step.queryParameters, "Comment");
-    }
-    return targetDocument.getURL(targetAction, step.queryParameters);
+    return new XWiki.Document(targetDocumentReference).getURL(
+      step.targetAction?.toLowerCase(),
+      step.queryParameters,
+    );
   }
 
   async getTours(): Promise<TourTour[]> {

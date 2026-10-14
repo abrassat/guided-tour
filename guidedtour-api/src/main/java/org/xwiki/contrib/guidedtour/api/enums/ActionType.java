@@ -43,9 +43,9 @@ public enum ActionType
      */
     VIEW,
     /**
-     * Comment action: represents an action that requires the user to add comments.
+     * Delete action: represents an action that requires the user to delete a document.
      */
-    COMMENT,
+    DELETE,
     /**
      * Create action: represents an action that requires the user to create a new document.
      */
