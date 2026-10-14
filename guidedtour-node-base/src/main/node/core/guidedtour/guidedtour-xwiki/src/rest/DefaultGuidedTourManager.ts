@@ -115,54 +115,70 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * @returns true if the current page is not the expected one.
    */
   redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
-    if (adjacentStep === undefined) {
-      return false;
-    }
-    const currentDocumentReference = XWiki.currentDocument.documentReference;
-    const targetDocumentReference = adjacentStep.targetPage
+    const targetDocumentReference = adjacentStep?.targetPage
       ? XWiki.Model.resolve(
           adjacentStep.targetPage,
           XWiki.EntityType.DOCUMENT,
-          currentDocumentReference,
+          XWiki.currentDocument.documentReference,
         )
-      : currentDocumentReference;
-    if (this.isOnExpectedPage(adjacentStep, targetDocumentReference)) {
+      : XWiki.currentDocument.documentReference;
+    if (
+      adjacentStep === undefined ||
+      this.isOnExpectedPage(adjacentStep, targetDocumentReference)
+    ) {
       return false;
     }
-    window.location.href = this.resolveStepRedirectURL(
+    const redirectURL = this.resolveStepRedirectURL(
       adjacentStep,
       targetDocumentReference,
     );
+    const currentURL = new URL(window.location.href);
+    window.location.href = redirectURL.href;
+    // Set the URI fragment, so the comparison below doesn't take it into account.
+    currentURL.hash = redirectURL.hash;
+    if (redirectURL.hash != "" && currentURL.href == redirectURL.href) {
+      // Changing only the fragment doesn't reload the page, but the callers expect a reload to resume the task.
+      // Reloading in any other case would cancel the navigation started above.
+      window.location.reload();
+    }
     return true;
   }
 
   /**
-   * Check if the current page matches the page, action and query parameters expected by the step.
+   * Check if the current page matches the page, action, query parameters and fragment expected by the step.
    * @param step - The step whose expected page to check.
    * @param targetDocumentReference - The reference of the page expected by the step.
    * @returns true if the current page is the expected one.
    */
   // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
   private isOnExpectedPage(step: TourStep, targetDocumentReference): boolean {
+    const expectedURL = this.resolveStepRedirectURL(
+      step,
+      targetDocumentReference,
+    );
     // Check that every expected query parameter is present, with the expected value, in the current URL.
     const currentPageQueryParams = new URLSearchParams(window.location.search);
     let hasExpectedQueryParams = true;
-    new URLSearchParams(step.queryParameters).forEach((value, name) => {
+    expectedURL.searchParams.forEach((value, name) => {
       hasExpectedQueryParams &&= currentPageQueryParams
         .getAll(name)
         .includes(value);
     });
-    // Inplace WYSIWYG leads to an URL like `/view/page#edit` instead of `/edit/page`, so we need to include it as part of the EDIT pageAction.
-    const pageAction =
-      XWiki.contextaction == "view" && window.location.hash == "#edit"
-        ? "edit"
-        : XWiki.contextaction;
-    const expectedAction = step.targetAction?.toLowerCase();
+    // Check the expected fragment, if any, against the current one.
+    let hasExpectedFragment =
+      !expectedURL.hash || expectedURL.hash == window.location.hash;
+    let pageAction = XWiki.contextaction;
+    if (XWiki.contextaction == "view" && window.location.hash == "#edit") {
+      // Inplace WYSIWYG leads to an URL like `/view/page#edit` instead of `/edit/page`, so we need to include it as part of the EDIT pageAction.
+      pageAction = "edit";
+      hasExpectedFragment = true;
+    }
     return (
       XWiki.Model.serialize(targetDocumentReference) ==
         XWiki.Model.serialize(XWiki.currentDocument.documentReference) &&
-      (!expectedAction || pageAction == expectedAction) &&
-      hasExpectedQueryParams
+      (!step.targetAction || pageAction == step.targetAction.toLowerCase()) &&
+      hasExpectedQueryParams &&
+      hasExpectedFragment
     );
   }
 
@@ -176,11 +192,20 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     step: TourStep,
     // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
     targetDocumentReference,
-  ): string {
-    return new XWiki.Document(targetDocumentReference).getURL(
-      step.targetAction?.toLowerCase(),
-      step.queryParameters,
+  ): URL {
+    const url = new URL(
+      new XWiki.Document(targetDocumentReference).getURL(
+        step.targetAction?.toLowerCase(),
+      ) +
+        "?" +
+        (step.queryParameters ?? "").replace(/^\?/, ""),
+      window.location.href,
     );
+    if (!url.search) {
+      // Drop the dangling "?" left by empty query parameters, so the URL can be compared to the current one.
+      url.search = "";
+    }
+    return url;
   }
 
   async getTours(): Promise<TourTour[]> {

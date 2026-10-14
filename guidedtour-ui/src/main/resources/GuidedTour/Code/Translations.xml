@@ -55,7 +55,7 @@ XWiki.GuidedTour.StepClass_targetPage_hint=The page on which the step should be 
 XWiki.GuidedTour.StepClass_targetAction=Target action
 XWiki.GuidedTour.StepClass_targetAction_hint=The expected action on the page targeted by this step.
 XWiki.GuidedTour.StepClass_queryParameters=Query parameters
-XWiki.GuidedTour.StepClass_queryParameters_hint=Parameters to append to the URL when navigating to the target page.
+XWiki.GuidedTour.StepClass_queryParameters_hint=Query parameters to append to the URL when navigating to the target page. You can also include a URI fragment at the end (e.g.: "?rev=1.0#History")
 XWiki.GuidedTour.TourClass_title=Title
 XWiki.GuidedTour.TourClass_title_hint=The tour title that will be displayed in the widget.
 XWiki.GuidedTour.TourClass_description=Description
