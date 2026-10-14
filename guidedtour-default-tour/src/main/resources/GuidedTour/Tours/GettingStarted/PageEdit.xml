@@ -242,7 +242,7 @@
       <reflex>0</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>VIEW</targetAction>
     </property>
     <property type="String">
       <targetPage>Sandbox.WebHome</targetPage>
@@ -453,7 +453,7 @@
       <reflex>1</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>VIEW</targetAction>
     </property>
     <property type="String">
       <targetPage/>
