@@ -97,8 +97,8 @@ catalogs:
       specifier: 7.3.7
       version: 7.3.7
     vite-plugin-css-injected-by-js:
-      specifier: 4.0.1
-      version: 4.0.1
+      specifier: 5.0.2
+      version: 5.0.2
     vite-plugin-dts:
       specifier: 4.5.4
       version: 4.5.4
@@ -360,7 +360,7 @@ importers:
         version: 7.3.7(@types/node@24.19.2)(jiti@2.7.0)
       vite-plugin-css-injected-by-js:
         specifier: 'catalog:'
-        version: 4.0.1(vite@7.3.7(@types/node@24.19.2)(jiti@2.7.0))
+        version: 5.0.2(vite@7.3.7(@types/node@24.19.2)(jiti@2.7.0))
       vite-plugin-dts:
         specifier: 'catalog:'
         version: 4.5.4(@types/node@24.19.2)(rollup@4.60.4)(typescript@5.9.3)(vite@7.3.7(@types/node@24.19.2)(jiti@2.7.0))
@@ -2609,10 +2609,10 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  vite-plugin-css-injected-by-js@4.0.1:
-    resolution: {integrity: sha512-WfyRojojQyAO/KzWf+efcXpTPv6zJPXaRmr9EYq5a4v5I3PWCR7kR01hiri2lW6+rHm3a57kpwsf+iahIJi1Qw==}
+  vite-plugin-css-injected-by-js@5.0.2:
+    resolution: {integrity: sha512-Hvg48QfYsCL53ju9T5zTC0Ofg90XLa8t5zhhKmPYbayoMQieNcQDkkRX8pv4TAcKPZwVisLFiwDy5uBjOn+3Ow==}
     peerDependencies:
-      vite: '>2.0.0-0'
+      vite: '>8.0.0-0'
 
   vite-plugin-dts@4.5.4:
     resolution: {integrity: sha512-d4sOM8M/8z7vRXHHq/ebbblfaxENjogAAekcfcDCCwAyvGqnPrc7f4NZbvItS+g4WTgerW0xDwSz5qz11JT3vg==}
@@ -5154,7 +5154,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite-plugin-css-injected-by-js@4.0.1(vite@7.3.7(@types/node@24.19.2)(jiti@2.7.0)):
+  vite-plugin-css-injected-by-js@5.0.2(vite@7.3.7(@types/node@24.19.2)(jiti@2.7.0)):
     dependencies:
       vite: 7.3.7(@types/node@24.19.2)(jiti@2.7.0)
 
