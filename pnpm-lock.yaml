@@ -82,8 +82,8 @@ catalogs:
       specifier: 0.3.25
       version: 0.3.25
     sinon:
-      specifier: 21.1.2
-      version: 21.1.2
+      specifier: 22.1.0
+      version: 22.1.0
     tippy.js:
       specifier: 6.3.7
       version: 6.3.7
@@ -263,7 +263,7 @@ importers:
         version: 4.18.1
       sinon:
         specifier: 'catalog:'
-        version: 21.1.2
+        version: 22.1.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -330,7 +330,7 @@ importers:
         version: 4.0.0
       sinon:
         specifier: 'catalog:'
-        version: 21.1.2
+        version: 22.1.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -435,7 +435,7 @@ importers:
         version: 4.18.1
       sinon:
         specifier: 'catalog:'
-        version: 21.1.2
+        version: 22.1.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -1564,6 +1564,10 @@ packages:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
     engines: {node: '>=0.3.1'}
 
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
+    engines: {node: '>=0.3.1'}
+
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
@@ -2437,8 +2441,8 @@ packages:
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
 
-  sinon@21.1.2:
-    resolution: {integrity: sha512-FS6mN+/bx7e2ajpXkEmOcWB6xBzWiuNoAQT18/+a20SS4U7FSYl8Ms7N6VTUxN/1JAjkx7aXp+THMC8xdpp0gA==}
+  sinon@22.1.0:
+    resolution: {integrity: sha512-n1ajF2rBWMTtEwbKcw4UdFg4nCnDdq/U6RDoxtOd7oapOlRoJ5ynwFx60owROyhDpA9QhMZi0pCO/xtmwFjG7w==}
 
   sortablejs@1.14.0:
     resolution: {integrity: sha512-pBXvQCs5/33fdN1/39pPL0NZF20LeRbLQ5jtnheIPN9JQAaufGjKdWduZn4U7wCtVuzKhmRkI0DFYHYRbB2H1w==}
@@ -3910,6 +3914,8 @@ snapshots:
 
   diff@8.0.4: {}
 
+  diff@9.0.0: {}
+
   doctrine@2.1.0:
     dependencies:
       esutils: 2.0.3
@@ -4948,12 +4954,12 @@ snapshots:
 
   siginfo@2.0.0: {}
 
-  sinon@21.1.2:
+  sinon@22.1.0:
     dependencies:
       '@sinonjs/commons': 3.0.1
       '@sinonjs/fake-timers': 15.4.0
       '@sinonjs/samsam': 10.0.2
-      diff: 8.0.4
+      diff: 9.0.0
 
   sortablejs@1.14.0: {}
 
