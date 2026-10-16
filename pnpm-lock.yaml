@@ -19,8 +19,8 @@ catalogs:
       specifier: 24.19.2
       version: 24.19.2
     '@types/sinon':
-      specifier: 21.0.0
-      version: 21.0.0
+      specifier: 22.0.0
+      version: 22.0.0
     '@vitejs/plugin-vue':
       specifier: 6.0.10
       version: 6.0.10
@@ -303,7 +303,7 @@ importers:
         version: 4.0.1
       '@types/sinon':
         specifier: 'catalog:'
-        version: 21.0.0
+        version: 22.0.0
       '@xwiki/contrib-guidedtour-dev-config':
         specifier: workspace:*
         version: link:../../../dev/config
@@ -1008,8 +1008,8 @@ packages:
   '@types/node@24.19.2':
     resolution: {integrity: sha512-93d49wCWJkCyN87MxLpNN6KXPCwFw7bVUg79mGUV1OS40JGWwVCr8n61DXCSqz7CV6/VfPkb7xec7uP2M+QHWQ==}
 
-  '@types/sinon@21.0.0':
-    resolution: {integrity: sha512-+oHKZ0lTI+WVLxx1IbJDNmReQaIsQJjN2e7UUrJHEeByG7bFeKJYsv1E75JxTQ9QKJDp21bAa/0W2Xo4srsDnw==}
+  '@types/sinon@22.0.0':
+    resolution: {integrity: sha512-TDbVpbccc2HfiqHR09Argj3mHV1KMW7sCCKj52fsl8lbRLkEn7fB1966EWhOKWUBcqfBueZuPoA7/OK1CKiy3g==}
 
   '@types/sinonjs__fake-timers@15.0.1':
     resolution: {integrity: sha512-Ko2tjWJq8oozHzHV+reuvS5KYIRAokHnGbDwGh/J64LntgpbuylF74ipEL24HCyRjf9FOlBiBHWBR1RlVKsI1w==}
@@ -3288,7 +3288,7 @@ snapshots:
     dependencies:
       undici-types: 7.24.6
 
-  '@types/sinon@21.0.0':
+  '@types/sinon@22.0.0':
     dependencies:
       '@types/sinonjs__fake-timers': 15.0.1
 
