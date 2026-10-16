@@ -118,8 +118,8 @@ catalogs:
       specifier: 6.8.0
       version: 6.8.0
     vue-tsc:
-      specifier: 3.2.7
-      version: 3.2.7
+      specifier: 3.3.13
+      version: 3.3.13
     vuedraggable:
       specifier: 4.1.0
       version: 4.1.0
@@ -287,7 +287,7 @@ importers:
         version: 11.4.14(vue@3.5.44(typescript@5.9.3))
       vue-tsc:
         specifier: 'catalog:'
-        version: 3.2.7(typescript@5.9.3)
+        version: 3.3.13(typescript@5.9.3)
 
   guidedtour-node-base/src/main/node/core/guidedtour/guidedtour-xwiki:
     dependencies:
@@ -456,7 +456,7 @@ importers:
         version: 3.5.44(typescript@5.9.3)
       vue-tsc:
         specifier: 'catalog:'
-        version: 3.2.7(typescript@5.9.3)
+        version: 3.3.13(typescript@5.9.3)
 
 packages:
 
@@ -1283,8 +1283,8 @@ packages:
       typescript:
         optional: true
 
-  '@vue/language-core@3.2.7':
-    resolution: {integrity: sha512-Gn4q/tRxbpVGLEuARQ43p3YELlNAFgRUVCgW9U5Cr+5q4vfD2bWDWpl3ABbJMXUt5xlE1dF8dkigg2aUq7JYYw==}
+  '@vue/language-core@3.3.13':
+    resolution: {integrity: sha512-axA0Xemn5LuUKuKWob0/kVq7xQ2mJJM6VqA9Exvt35nM9yRC31goWVve/G/Zb2ZCLsXC8FHYjjfXlnshknSCew==}
 
   '@vue/reactivity@3.5.44':
     resolution: {integrity: sha512-u+QJdKeBBEADkPdevsL+6E12QlYVfBD8Zcw5qjDQKtamI6l14KyqazJMobhCKelhWN5zpyKUiEDoTyHE93cqWw==}
@@ -2725,8 +2725,8 @@ packages:
     peerDependencies:
       vue: ^3.2.0
 
-  vue-tsc@3.2.7:
-    resolution: {integrity: sha512-zc1tL3HoQni1zGTGrwBVRQb7rGP5SWdu/m4rGB6JcnAC5MT5LFZIxF7Y+EJEnt4hGF23d60rXH7gRjHGb5KQQQ==}
+  vue-tsc@3.3.13:
+    resolution: {integrity: sha512-jE4/bXdOMSHVxEGgQCqNllJy+9N3Gx6tfSAsg0yhFK/MAN6eXqISihupnDEKSCt12VVnjN2gI3AqLYcqoh5x/A==}
     hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
@@ -3521,7 +3521,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@vue/language-core@3.2.7':
+  '@vue/language-core@3.3.13':
     dependencies:
       '@volar/language-core': 2.4.28
       '@vue/compiler-dom': 3.5.44
@@ -5182,10 +5182,10 @@ snapshots:
       tippy.js: 6.3.7
       vue: 3.5.44(typescript@5.9.3)
 
-  vue-tsc@3.2.7(typescript@5.9.3):
+  vue-tsc@3.3.13(typescript@5.9.3):
     dependencies:
       '@volar/typescript': 2.4.28
-      '@vue/language-core': 3.2.7
+      '@vue/language-core': 3.3.13
       typescript: 5.9.3
 
   vue@3.5.44(typescript@5.9.3):
