@@ -204,7 +204,7 @@ const util = {
     // If the adjacent step is on another page, redirect to it. Reflex actions never redirect, since they might navigate
     // on their own (e.g. "Save and view").
     if (
-      !guidedTourManager.activeTask!.steps![currentStepActiveIndex].reflex &&
+      !guidedTourTask.steps![currentStepActiveIndex].reflex &&
       guidedTourManager.redirectToExpectedPage(adjacentStep)
     ) {
       return;

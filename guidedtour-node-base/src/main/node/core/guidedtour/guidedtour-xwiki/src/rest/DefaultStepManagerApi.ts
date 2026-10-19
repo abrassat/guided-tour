@@ -114,6 +114,10 @@ export class DefaultStepManagerApi implements StepManagerApi {
         if (step.targetAction == "NOT_SET") {
           step.targetAction = undefined;
         }
+        if (step.reflex == true && !step.element) {
+          // A reflex step requires a targeted element to click. Convert misconfigured steps to non-reflex ones.
+          step.reflex = false;
+        }
       });
 
       this.sharedStore.updateTaskSteps(tourId, taskId, steps);

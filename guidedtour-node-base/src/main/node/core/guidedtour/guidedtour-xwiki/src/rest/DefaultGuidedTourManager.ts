@@ -114,7 +114,11 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * @param adjacentStep - The step whose expected page to check.
    * @returns true if the current page is not the expected one.
    */
+  // eslint-disable-next-line max-statements
   redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
+    if (adjacentStep === undefined) {
+      return false;
+    }
     const targetDocumentReference = adjacentStep?.targetPage
       ? XWiki.Model.resolve(
           adjacentStep.targetPage,
@@ -122,16 +126,15 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
           XWiki.currentDocument.documentReference,
         )
       : XWiki.currentDocument.documentReference;
-    if (
-      adjacentStep === undefined ||
-      this.isOnExpectedPage(adjacentStep, targetDocumentReference)
-    ) {
-      return false;
-    }
     const redirectURL = this.resolveStepRedirectURL(
       adjacentStep,
       targetDocumentReference,
     );
+    if (
+      this.isOnExpectedPage(adjacentStep, redirectURL, targetDocumentReference)
+    ) {
+      return false;
+    }
     const currentURL = new URL(window.location.href);
     window.location.href = redirectURL.href;
     // Set the URI fragment, so the comparison below doesn't take it into account.
@@ -147,15 +150,16 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   /**
    * Check if the current page matches the page, action, query parameters and fragment expected by the step.
    * @param step - The step whose expected page to check.
+   * @param expectedURL - The url to check against.
    * @param targetDocumentReference - The reference of the page expected by the step.
    * @returns true if the current page is the expected one.
    */
-  // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
-  private isOnExpectedPage(step: TourStep, targetDocumentReference): boolean {
-    const expectedURL = this.resolveStepRedirectURL(
-      step,
-      targetDocumentReference,
-    );
+  private isOnExpectedPage(
+    step: TourStep,
+    expectedURL: URL,
+    // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
+    targetDocumentReference,
+  ): boolean {
     // Check that every expected query parameter is present, with the expected value, in the current URL.
     const currentPageQueryParams = new URLSearchParams(window.location.search);
     let hasExpectedQueryParams = true;
@@ -165,13 +169,13 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         .includes(value);
     });
     // Check the expected fragment, if any, against the current one.
-    let hasExpectedFragment =
+    const hasExpectedFragment =
       !expectedURL.hash || expectedURL.hash == window.location.hash;
     let pageAction = XWiki.contextaction;
     if (XWiki.contextaction == "view" && window.location.hash == "#edit") {
-      // Inplace WYSIWYG leads to an URL like `/view/page#edit` instead of `/edit/page`, so we need to include it as part of the EDIT pageAction.
+      // Inplace WYSIWYG leads to an URL like `/view/page#edit` instead of `/edit/page`, so we need to include it as
+      // part of the EDIT pageAction.
       pageAction = "edit";
-      hasExpectedFragment = true;
     }
     return (
       XWiki.Model.serialize(targetDocumentReference) ==
