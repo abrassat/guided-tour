@@ -44,6 +44,7 @@ const util = {
    * Do the necessary setup for rendering the `Skip All` link.
    * @param guidedTourManager - API
    * @param guidedTourTask - the task to make the button for
+   * @param translations - the translations used for the label of the button
    * @returns The `Skip All` element
    */
   makeSkipAllButton(
@@ -54,8 +55,12 @@ const util = {
     const customSkipAll = document.createElement("a");
     customSkipAll.classList.add("driver-xwiki-skip-all-button");
 
-    function onSkipAll() {
-      guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
+    /**
+     * Skip the task when the `Skip All` link is clicked.
+     */
+    async function onSkipAll() {
+      // Skipping the task also stops starting the next tasks of its tour automatically.
+      await guidedTourManager.skipTask(guidedTourTask);
     }
 
     customSkipAll.onclick = onSkipAll;
@@ -251,7 +256,11 @@ function XWikiDriverConfig(
         activeIndex.toString(),
       );
     },
-    onDestroyed: function (_element, _step, _options) {
+    /**
+     * Set the status of the task when it is closed: DONE if the user reached the end, otherwise keep its status and
+     * stop starting the next tasks of its tour automatically.
+     */
+    onDestroyed: async function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
       // The state provided by driver.js is empty when this function is called.
       if (guidedTourManager.activeTask === undefined) {
@@ -264,11 +273,24 @@ function XWikiDriverConfig(
               StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
             ) ?? "-1",
           ) + 1;
-        const status =
-          currentStepIndex >= guidedTourTask.steps!.length
-            ? TourTaskStatus.DONE
-            : TourTaskStatus.SKIPPED;
-        guidedTourManager.setTaskStatus(guidedTourTask, status);
+        try {
+          if (currentStepIndex >= guidedTourTask.steps!.length) {
+            await guidedTourManager.setTaskStatus(
+              guidedTourTask,
+              TourTaskStatus.DONE,
+            );
+          } else {
+            // The user closed the task before the end (close button or click outside): keep its status, but don't
+            // start the next tasks of its tour automatically anymore.
+            await guidedTourManager.disableCallToAction(guidedTourTask.tourId!);
+            await guidedTourManager.setTaskStatus(
+              guidedTourTask,
+              guidedTourTask.status,
+            );
+          }
+        } catch (e) {
+          console.error(e);
+        }
       }
     },
     onNextClick: async () => {
