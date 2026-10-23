@@ -38,6 +38,11 @@
   <hidden>true</hidden>
   <content>## Classes
 
+admin.guidedtour.description=Administration space for Guided Tour application
+GuidedTour.Code.ConfigurationClass_usefulLinks=Useful links
+GuidedTour.Code.ConfigurationClass_usefulLinks.hint=Links displayed in the guided tour widget. Each URL needs to be added on a separate line
+GuidedTour.Code.ConfigurationClass_defaultSpace=Default space
+GuidedTour.Code.ConfigurationClass_defaultSpace.hint=Configure the target space where actions are performed
 XWiki.GuidedTour.StepClass_order=Order
 XWiki.GuidedTour.StepClass_order_hint=Order of this step in the task.
 XWiki.GuidedTour.StepClass_element=Element
