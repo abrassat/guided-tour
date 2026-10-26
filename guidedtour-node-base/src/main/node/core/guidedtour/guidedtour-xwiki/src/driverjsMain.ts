@@ -147,7 +147,7 @@ const util = {
     guidedTourTask: TourTask,
     translations: Record<string, string>,
   ) {
-    if (step.reflex) {
+    if (step.reflex && step.element) {
       popDOM.footerButtons.removeChild(popDOM.nextButton);
       popDOM.footerButtons.removeChild(popDOM.previousButton);
     } else {
@@ -304,9 +304,12 @@ function XWikiDriverConfig(
       }
     },
     onNextClick: async (element, _step, options) => {
+      const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
       if (
-        guidedTourTask.steps![options.state.activeIndex!].reflex &&
-        element instanceof HTMLElement
+        xwikiStep.reflex &&
+        xwikiStep.element !== undefined &&
+        element instanceof HTMLElement &&
+        element.id !== "driver-dummy-element"
       ) {
         element.click();
         return;
