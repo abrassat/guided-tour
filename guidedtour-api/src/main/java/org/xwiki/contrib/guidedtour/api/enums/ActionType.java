@@ -31,10 +31,6 @@ import org.xwiki.stability.Unstable;
 public enum ActionType
 {
     /**
-     * Not set: no specific action is expected, the step can be displayed whatever the current action is.
-     */
-    NOT_SET,
-    /**
      * Edit action: represents an action that requires the user to edit content or settings.
      */
     EDIT,
@@ -53,7 +49,11 @@ public enum ActionType
     /**
      * Admin action: represents an action that requires the user to access the administration of a page or wiki.
      */
-    ADMIN;
+    ADMIN,
+    /**
+     * Not set: no specific action is expected, the step can be displayed whatever the current action is.
+     */
+    NOT_SET;
 
     /**
      * Get the ActionType from a string value.

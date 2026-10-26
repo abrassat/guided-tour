@@ -35,6 +35,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     getTask(tourId: string, taskId: string): Promise<TourTask | undefined>;
     // (undocumented)
     getTasks(tourId: string): Promise<TourTask[]>;
+    // (undocumented)
     getTours(): Promise<TourTour[]>;
     getUsefulLinks(): Promise<string[]>;
     getWidgetState(): Promise<WidgetState>;
