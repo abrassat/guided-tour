@@ -164,7 +164,7 @@
     <targetAction>
       <cache>0</cache>
       <customDisplay/>
-      <defaultValue/>
+      <defaultValue>NOT_SET</defaultValue>
       <disabled>0</disabled>
       <displayType>select</displayType>
       <freeText/>
@@ -183,7 +183,7 @@
       <unmodifiable>0</unmodifiable>
       <validationMessage/>
       <validationRegExp/>
-      <values>EDIT|VIEW|DELETE|CREATE|ADMIN|</values>
+      <values>EDIT|VIEW|DELETE|CREATE|ADMIN|NOT_SET</values>
       <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
     </targetAction>
     <targetPage>
