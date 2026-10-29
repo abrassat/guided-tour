@@ -475,7 +475,7 @@ function bindReflexEvents(
   },
 ) {
   console.debug("Doing reflex bind");
-  if (!step.reflex || element === undefined) {
+  if (!util.isReflex(step)) {
     if (step.reflex && element === undefined) {
       console.warn("WARNING: reflex step with empty element:", step);
     }
@@ -483,7 +483,7 @@ function bindReflexEvents(
   }
   const triggerCallback = () => {
     console.debug("Removing reflex listener on ", element);
-    element.removeEventListener("click", callback);
+    element!.removeEventListener("click", callback);
     callbackFn();
   };
   const callback = (event: Event) => {
@@ -512,7 +512,7 @@ function bindReflexEvents(
     }
   };
   console.debug("Adding reflex listener on ", element);
-  element.addEventListener("click", callback);
+  element!.addEventListener("click", callback);
 }
 
 // FIXME: From old TourJS.xml
