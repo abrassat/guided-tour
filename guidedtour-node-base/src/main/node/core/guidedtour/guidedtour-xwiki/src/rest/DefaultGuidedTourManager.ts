@@ -267,9 +267,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   }
 
   /**
-   * Get all the tours, with the status of their tasks set from the progress of the current user.
-   */
-  /**
    * Check if the current page matches the one expected by the step, and redirect to it otherwise.
    * @param adjacentStep - The step whose expected page to check.
    * @returns true if the current page is not the expected one.
@@ -372,6 +369,9 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     return url;
   }
 
+  /**
+   * Get all the tours, with the status of their tasks set from the progress of the current user.
+   */
   async getTours(): Promise<TourTour[]> {
     // The user status is needed to set the status of the tasks.
     await this.getUserStatus();

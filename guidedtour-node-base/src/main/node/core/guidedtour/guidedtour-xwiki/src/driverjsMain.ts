@@ -104,6 +104,15 @@ const util = {
     }, selector);
   },
   /**
+   * Figure out if the given step should be considered a reflex step.
+   *
+   * @param step - the TourStep to check
+   * @returns - true if the step should be treated as a reflex step (advancing on click), false otherwise
+   */
+  isReflex(step: TourStep): boolean {
+    return step.reflex && step.element !== undefined;
+  },
+  /**
    *
    * @param callbackFn - The function to run to test if our goal has been achieved. Should return truthy if achieved,
    *     false otherwise (if we still need to wait)
@@ -147,7 +156,7 @@ const util = {
     guidedTourTask: TourTask,
     translations: Record<string, string>,
   ) {
-    if (step.reflex && step.element) {
+    if (util.isReflex(step)) {
       popDOM.footerButtons.removeChild(popDOM.nextButton);
       popDOM.footerButtons.removeChild(popDOM.previousButton);
     } else {
@@ -306,8 +315,7 @@ function XWikiDriverConfig(
     onNextClick: async (element, _step, options) => {
       const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
       if (
-        xwikiStep.reflex &&
-        xwikiStep.element !== undefined &&
+        util.isReflex(xwikiStep) &&
         element instanceof HTMLElement &&
         element.id !== "driver-dummy-element"
       ) {
