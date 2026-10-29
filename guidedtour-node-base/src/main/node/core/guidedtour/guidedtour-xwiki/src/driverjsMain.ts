@@ -110,7 +110,7 @@ const util = {
    * @returns true if the step should be treated as a reflex step (advancing on click), false otherwise
    */
   isReflex(step: TourStep): boolean {
-    return step.reflex && step.element !== undefined;
+    return step.reflex && !!step.element;
   },
   /**
    *
